@@ -1,0 +1,73 @@
+-- Sample data seed for Vitala
+-- Run this AFTER supabase/schema.sql in the Supabase SQL Editor.
+-- NOTE: Replace '00000000-0000-0000-0000-000000000000' with an actual
+-- auth.users id (e.g. your own account) before running.
+
+-- Example: insert a profile for a demo user
+-- insert into public.profiles (
+--   id,
+--   display_name,
+--   age,
+--   country,
+--   dietary_preferences,
+--   allergies,
+--   food_restrictions,
+--   budget_max,
+--   cooking_facilities,
+--   prep_time_minutes,
+--   fitness_experience,
+--   preferred_activities,
+--   equipment,
+--   wellness_goals,
+--   reminder_channels,
+--   reminder_frequency,
+--   notifications_enabled
+-- ) values (
+--   '00000000-0000-0000-0000-000000000000'::uuid,
+--   'Demo User',
+--   28,
+--   'Kenya',
+--   ARRAY['vegetarian'],
+--   ARRAY['peanuts'],
+--   ARRAY[],
+--   5000,
+--   'stove',
+--   30,
+--   'beginner',
+--   ARRAY['walking', 'yoga'],
+--   ARRAY['none'],
+--   ARRAY['energy', 'weight management'],
+--   ARRAY['in_app', 'whatsapp'],
+--   'daily',
+--   true
+-- );
+
+-- Example: insert a week meal plan
+-- insert into public.meal_plans (user_id, plan_type, start_date, data)
+-- values (
+--   '00000000-0000-0000-0000-000000000000'::uuid,
+--   'week',
+--   CURRENT_DATE,
+--   '{"days": []}'::jsonb
+-- );
+
+-- Example: insert a workout
+-- insert into public.workouts (
+--   user_id,
+--   title,
+--   category,
+--   instructions,
+--   duration_minutes,
+--   equipment_needed,
+--   scheduled_for
+-- ) values (
+--   '00000000-0000-0000-0000-000000000000'::uuid,
+--   'Morning walk',
+--   'cardio',
+--   '["30 minute brisk walk", "Light stretching after"]'::jsonb,
+--   30,
+--   ARRAY[]::text[],
+--   CURRENT_DATE
+-- );
+
+select 'Seed file ready. Update the placeholder user id and uncomment inserts before running.' as note;
