@@ -1,9 +1,19 @@
 import Stripe from "stripe";
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-09-30.endive",
-  typescript: true,
-});
+let stripeInstance: Stripe | null = null;
+
+export function getStripe() {
+  if (!stripeInstance) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error("STRIPE_SECRET_KEY is not set");
+    }
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2026-09-30.endive",
+      typescript: true,
+    });
+  }
+  return stripeInstance;
+}
 
 export const SUBSCRIPTION_PLANS = [
   {

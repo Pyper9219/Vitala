@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { stripe, getPlan, getStripePriceId } from "@/lib/stripe";
+import { getStripe, getPlan, getStripePriceId } from "@/lib/stripe";
 import { query } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
     if (subRes.rows[0]?.stripe_customer_id) {
       customerId = subRes.rows[0].stripe_customer_id;
     } else if (profile.email) {
-      const customer = await stripe.customers.create({
+      const customer = await getStripe().customers.create({
         email: profile.email,
         name: profile.display_name || undefined,
         metadata: { userId },
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
       customerId = customer.id;
     }
 
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : profile?.email,
       line_items: [
