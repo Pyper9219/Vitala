@@ -1,7 +1,9 @@
-"use client";
+"use server";
 
-import { useEffect, useState } from "react";
-import { createBrowserClient } from "@/lib/supabase";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { verifyToken } from "@/lib/auth";
+import { query } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,51 +39,46 @@ const PLANS = [
   },
 ] as const;
 
-export default function SubscriptionPage() {
-  const supabase = createBrowserClient();
-  const [subscription, setSubscription] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [upgrading, setUpgrading] = useState(false);
-
-  useEffect(() => {
-    loadSubscription();
-  }, []);
-
-  async function loadSubscription() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-
-    setSubscription(data);
-    setLoading(false);
+async function getCurrentUserId(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("vitala_session")?.value;
+  if (!token) return null;
+  try {
+    const payload = verifyToken(token) as { id?: string };
+    return payload.id ?? null;
+  } catch {
+    return null;
   }
+}
+
+export default async function SubscriptionPage() {
+  const userId = await getCurrentUserId();
+  if (!userId) return redirect("/login");
+
+  const res = await query(
+    "SELECT * FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1",
+    [userId]
+  );
+  const subscription = res.rows[0] ?? null;
+
+  const currentPlan = PLANS.find((p) => p.id === subscription?.plan) || PLANS[0];
+  const isPremium = subscription?.plan === "premium";
+  const isActive = subscription?.status === "active";
 
   async function handleUpgrade(planId: string) {
-    setUpgrading(true);
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId, userId: subscription?.user_id }),
-      });
-      const data = await res.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else if (data.success) {
-        await loadSubscription();
-      } else {
-        alert(data.error || "Upgrade failed");
-      }
-    } catch {
-      alert("Upgrade failed. Please try again.");
-    } finally {
-      setUpgrading(false);
+    const res = await fetch("/api/stripe/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planId, userId: subscription?.user_id }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      if (typeof window !== "undefined") window.location.href = data.url;
+    } else if (data.success) {
+      // reload to reflect new subscription
+      if (typeof window !== "undefined") window.location.reload();
+    } else {
+      alert(data.error || "Upgrade failed");
     }
   }
 
@@ -92,25 +89,10 @@ export default function SubscriptionPage() {
       body: JSON.stringify({ userId: subscription?.user_id }),
     });
     const data = await res.json();
-    if (data.url) {
+    if (data.url && typeof window !== "undefined") {
       window.location.href = data.url;
     }
   }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-          <span className="text-muted-foreground">Loading...</span>
-        </div>
-      </div>
-    );
-  }
-
-  const currentPlan = PLANS.find((p) => p.id === subscription?.plan) || PLANS[0];
-  const isPremium = subscription?.plan === "premium";
-  const isActive = subscription?.status === "active";
 
   return (
     <div className="min-h-screen bg-background">
@@ -120,7 +102,6 @@ export default function SubscriptionPage() {
           <h1 className="text-2xl font-bold">Subscription</h1>
         </div>
 
-        {/* Current plan card */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Current Plan</CardTitle>
@@ -161,7 +142,6 @@ export default function SubscriptionPage() {
           </CardContent>
         </Card>
 
-        {/* Plan selector */}
         <h2 className="text-lg font-semibold mb-4">Choose a plan</h2>
         <div className="grid md:grid-cols-2 gap-6">
           {PLANS.map((plan) => {
@@ -200,9 +180,8 @@ export default function SubscriptionPage() {
                   <Button
                     className="w-full"
                     onClick={() => handleUpgrade(plan.id)}
-                    disabled={upgrading}
                   >
-                    {upgrading ? "Processing..." : plan.cta}
+                    {plan.cta}
                   </Button>
                 )}
                 {!selected && (
@@ -215,7 +194,6 @@ export default function SubscriptionPage() {
           })}
         </div>
 
-        {/* M-Pesa note */}
         <Card className="mt-8 border-l-4 border-primary">
           <CardHeader className="flex flex-row items-center gap-3">
             <ShieldAlert className="h-5 w-5 text-primary" />

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { supabaseAdmin } from "@/lib/supabase";
+import { query } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
@@ -10,11 +10,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "userId required" }, { status: 400 });
     }
 
-    const { data: sub } = await supabaseAdmin
-      .from("subscriptions")
-      .select("stripe_customer_id")
-      .eq("user_id", userId)
-      .single();
+    const res = await query(
+      "SELECT stripe_customer_id FROM subscriptions WHERE user_id = $1",
+      [userId]
+    );
+
+    const sub = res.rows[0];
 
     if (!sub?.stripe_customer_id) {
       return NextResponse.json(

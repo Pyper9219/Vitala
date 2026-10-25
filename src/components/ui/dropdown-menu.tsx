@@ -28,7 +28,7 @@ DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
 
 const DropdownMenuItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Item>,
-  DropdownMenuPrimitive.ItemProps
+  DropdownMenuPrimitive.DropdownMenuItemProps
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.Item
     ref={ref}
@@ -66,7 +66,7 @@ DropdownMenuCheckboxItem.displayName = DropdownMenuPrimitive.CheckboxItem.displa
 
 const DropdownMenuRadioGroup = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.RadioGroup>,
-  DropdownMenuPrimitive.RadioGroupProps
+  DropdownMenuPrimitive.DropdownMenuRadioGroupProps
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.RadioGroup
     ref={ref}
@@ -152,14 +152,10 @@ const DropdownMenuGroup = React.forwardRef<
 DropdownMenuGroup.displayName = DropdownMenuPrimitive.Group.displayName;
 
 const DropdownMenuSub = React.forwardRef<
-  React.ElementRef<typeof DropdownMenuPrimitive.Sub>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Sub>
+  HTMLElement,
+  DropdownMenuPrimitive.DropdownMenuSubProps & { className?: string }
 >(({ className, ...props }, ref) => (
-  <DropdownMenuPrimitive.Sub
-    ref={ref}
-    className={cn("", className)}
-    {...props}
-  />
+  <DropdownMenuPrimitive.Sub {...props} />
 ));
 DropdownMenuSub.displayName = DropdownMenuPrimitive.Sub.displayName;
 

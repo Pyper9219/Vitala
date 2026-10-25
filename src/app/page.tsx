@@ -38,7 +38,7 @@ export default function Home() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = async (e: FormDataEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitting(true);
     await new Promise((r) => setTimeout(r, 800));

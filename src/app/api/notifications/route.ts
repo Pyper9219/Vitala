@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { createBrowserClient } from "@/lib/supabase";
 import { sendNotification } from "@/lib/notifications";
 
 export async function POST(req: Request) {

@@ -1,8 +1,10 @@
-"use client";
+"use server";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { verifyToken } from "@/lib/auth";
+import { query } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,85 +17,107 @@ import {
   ShoppingCart,
   CheckCircle2,
   Trash2,
-  Edit2,
   Package,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export default function ShoppingPage() {
-  const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [newItem, setNewItem] = useState({
-    name: "",
-    category: "produce",
-    quantity: "",
-    unit: "pcs",
-    estimated_cost: "",
-  });
+const CATEGORIES = [
+  { id: "produce", label: "Produce" },
+  { id: "dairy", label: "Dairy" },
+  { id: "meat", label: "Meat & Fish" },
+  { id: "pantry", label: "Pantry" },
+  { id: "bakery", label: "Bakery" },
+  { id: "household", label: "Household" },
+];
 
-  useEffect(() => {
-    loadItems();
-  }, []);
+const UNITS = ["pcs", "kg", "g", "litres", "ml", "cups", "tbsp", "tsp", "packets"];
 
-  const loadItems = async () => {
-    const { data } = await supabase
-      .from("shopping_items")
-      .select("*")
-      .order("purchased", { ascending: true })
-      .order("created_at", { ascending: false });
+async function getCurrentUserId(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("vitala_session")?.value;
+  if (!token) return null;
+  try {
+    const payload = verifyToken(token);
+    if (!payload) return null;
+    return payload.id;
+  } catch {
+    return null;
+  }
+}
 
-    setItems(data ?? []);
-    setLoading(false);
-  };
+interface ShoppingItem {
+  id: string;
+  user_id: string;
+  meal_plan_id: string | null;
+  name: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  estimated_cost: number;
+  currency: string;
+  purchased: boolean;
+  created_at: string;
+}
 
-  const addItem = async (e: FormDataEvent) => {
-    e.preventDefault();
+async function getShoppingItems(userId: string): Promise<ShoppingItem[]> {
+  const res = await query<ShoppingItem>(
+    `SELECT id, user_id, meal_plan_id, name, category, quantity, unit, estimated_cost, currency, purchased, created_at
+     FROM shopping_items
+     WHERE user_id = $1
+     ORDER BY purchased ASC, created_at DESC`,
+    [userId]
+  );
+  return res.rows;
+}
 
-    const { error } = await supabase.from("shopping_items").insert({
-      name: newItem.name,
-      category: newItem.category,
-      quantity: Number(newItem.quantity) || 1,
-      unit: newItem.unit,
-      estimated_cost: Number(newItem.estimated_cost) || 0,
-      purchased: false,
-    });
+async function addShoppingItem(formData: FormData): Promise<void> {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    redirect("/login");
+  }
 
-    if (!error) {
-      setNewItem({
-        name: "",
-        category: "produce",
-        quantity: "",
-        unit: "pcs",
-        estimated_cost: "",
-      });
-      loadItems();
-    }
-  };
+  const name = String(formData.get("name") ?? "").trim();
+  const category = String(formData.get("category") ?? "produce").trim();
+  const quantity = Number(formData.get("quantity")) || 1;
+  const unit = String(formData.get("unit") ?? "pcs").trim();
+  const estimated_cost = Number(formData.get("estimated_cost")) || 0;
 
-  const toggleItem = async (id: string, purchased: boolean) => {
-    await supabase
-      .from("shopping_items")
-      .update({ purchased: !purchased })
-      .eq("id", id);
-    loadItems();
-  };
+  if (!name) {
+    return;
+  }
 
-  const deleteItem = async (id: string) => {
-    if (!confirm("Delete this item?")) return;
-    await supabase.from("shopping_items").delete().eq("id", id);
-    loadItems();
-  };
+  await query(
+    `INSERT INTO shopping_items (user_id, name, category, quantity, unit, estimated_cost, purchased, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+    [userId, name, category, quantity, unit, estimated_cost, false]
+  );
+}
 
-  const CATEGORIES = [
-    { id: "produce", label: "Produce" },
-    { id: "dairy", label: "Dairy" },
-    { id: "meat", label: "Meat & Fish" },
-    { id: "pantry", label: "Pantry" },
-    { id: "bakery", label: "Bakery" },
-    { id: "household", label: "Household" },
-  ];
+async function toggleShoppingItem(formData: FormData): Promise<void> {
+  const id = String(formData.get("id") ?? "");
+  const purchased = String(formData.get("purchased") ?? "") === "true";
+  const userId = await getCurrentUserId();
+  if (!userId) return;
+  await query(
+    `UPDATE shopping_items SET purchased = $1 WHERE id = $2 AND user_id = $3`,
+    [!purchased, id, userId]
+  );
+}
 
-  const UNITS = ["pcs", "kg", "g", "litres", "ml", "cups", "tbsp", "tsp", "packets"];
+async function deleteShoppingItem(formData: FormData): Promise<void> {
+  const id = String(formData.get("id") ?? "");
+  const userId = await getCurrentUserId();
+  if (!userId) return;
+  await query(`DELETE FROM shopping_items WHERE id = $1 AND user_id = $2`, [id, userId]);
+}
+
+export default async function ShoppingPage() {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    redirect("/login");
+  }
+
+  const items = await getShoppingItems(userId);
 
   const purchasedItems = items.filter((i) => i.purchased);
   const pendingItems = items.filter((i) => !i.purchased);
@@ -101,19 +125,6 @@ export default function ShoppingPage() {
     (acc, item) => acc + (Number(item.estimated_cost) || 0),
     0
   );
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background py-12 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold">Shopping List</h1>
-          <div className="mt-8 animate-pulse">
-            <div className="h-4 bg-muted rounded w-1/2" />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background py-12 px-4">
@@ -195,12 +206,19 @@ export default function ShoppingPage() {
                         className="flex items-center justify-between p-3 rounded-lg border bg-background group"
                       >
                         <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => toggleItem(item.id, item.purchased)}
-                            className="w-5 h-5 rounded-full border border-input flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                          </button>
+                          <form action={toggleShoppingItem} className="inline">
+                            <input type="hidden" name="id" value={item.id} />
+                            <input
+                              type="hidden"
+                              name="purchased"
+                              value={String(item.purchased)}
+                            />
+                            <button
+                              className="w-5 h-5 rounded-full border border-input flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                            </button>
+                          </form>
                           <div className="flex-1">
                             <div className="font-medium">{item.name}</div>
                             <div className="text-xs text-muted-foreground">
@@ -213,9 +231,12 @@ export default function ShoppingPage() {
                             )}
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <form action={deleteShoppingItem} className="inline" onSubmit={(e) => { if (!confirm("Delete this item?")) e.preventDefault(); }}>
+                          <input type="hidden" name="id" value={item.id} />
+                          <Button variant="ghost" size="sm" type="submit">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </form>
                       </div>
                     ))}
                   </div>
@@ -258,13 +279,12 @@ export default function ShoppingPage() {
                 <CardTitle>Add item</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={addItem} className="space-y-4">
+                <form action={addShoppingItem} className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Item name</label>
                     <input
                       className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      value={newItem.name}
-                      onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                      name="name"
                       placeholder="e.g. Bananas"
                       required
                     />
@@ -273,8 +293,7 @@ export default function ShoppingPage() {
                     <label className="text-sm font-medium">Category</label>
                     <select
                       className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      value={newItem.category}
-                      onChange={(e) => setNewItem({ ...newItem, category: e.target.value as any })}
+                      name="category"
                     >
                       {CATEGORIES.map((c) => (
                         <option key={c.id} value={c.id}>
@@ -289,16 +308,15 @@ export default function ShoppingPage() {
                       <input
                         type="number"
                         className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        value={newItem.quantity}
-                        onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
+                        name="quantity"
+                        defaultValue="1"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Unit</label>
                       <select
                         className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        value={newItem.unit}
-                        onChange={(e) => setNewItem({ ...newItem, unit: e.target.value as any })}
+                        name="unit"
                       >
                         {UNITS.map((u) => (
                           <option key={u} value={u}>
@@ -312,8 +330,8 @@ export default function ShoppingPage() {
                       <input
                         type="number"
                         className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        value={newItem.estimated_cost}
-                        onChange={(e) => setNewItem({ ...newItem, estimated_cost: e.target.value })}
+                        name="estimated_cost"
+                        defaultValue="0"
                       />
                     </div>
                   </div>

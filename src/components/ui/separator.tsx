@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 interface SeparatorProps extends React.HTMLAttributes<HTMLHRElement> {
   orientation?: "horizontal" | "vertical";
   decorative?: boolean;
-  orientation?: "horizontal" | "vertical";
 }
 
 const Separator = React.forwardRef<HTMLHRElement, SeparatorProps>(

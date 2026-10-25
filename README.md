@@ -125,6 +125,53 @@ supabase/
 - All user data is protected by Supabase Row Level Security — users can only
   access their own rows.
 
+## Deploy on Vercel
+
+Vercel is the recommended host for this Next.js app (no Docker needed).
+
+### 1. Push to GitHub
+
+```bash
+git add .
+git commit -m "Prepare for Vercel deployment"
+git push origin main
+```
+
+### 2. Import in Vercel
+
+- Go to [vercel.com](https://vercel.com) → **Add New Project**.
+- Import the `Pyper9219/Vitala` repository.
+- Framework preset: **Next.js** (detected automatically).
+- Build command: `npm run build`
+- Output directory: `.next` (default)
+
+### 3. Add environment variables
+
+In **Vercel Project Settings → Environment Variables**, add the following (copy from `.env.example` and fill in real values):
+
+| Variable | Required | Notes |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase public anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service role key (server-side admin ops) |
+| `NEXT_PUBLIC_APP_URL` | Yes | Your Vercel domain, e.g. `https://vitala.vercel.app` |
+| `OPENAI_API_KEY` | No | AI assistant falls back to a setup message if omitted |
+| `STRIPE_SECRET_KEY` | No* | Required for real Premium subscriptions |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | No* | Required for real Premium subscriptions |
+| `STRIPE_WEBHOOK_SECRET` | No* | For Stripe webhook verification |
+| `MPESA_*` | No | Placeholder; only if going live with M-Pesa |
+| `TWILIO_*` | No | Dev mode (console log) if omitted |
+
+\* Stripe keys are optional — Premium activates instantly in dev mode without them.
+
+### 4. Set up the database
+
+Run `supabase/schema.sql` in your Supabase project's SQL Editor to create tables, enable Row Level Security, and add indexes.
+
+### 5. Deploy
+
+Push to `main` — Vercel will build and deploy automatically on every push.
+
 ## License
 
 MIT

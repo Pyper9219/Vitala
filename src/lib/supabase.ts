@@ -1,19 +1,11 @@
-import { createClient } from "@supabase/supabase-js";
+// Deprecated: Supabase client removed.
+// This project now uses Neon (pg) via src/lib/db.ts.
+// Kept as a re-export shim so any lingering imports do not crash at build time.
+export { query } from "@/lib/db";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+export const supabase = null as any;
+export const supabaseAdmin = null as any;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-export const supabaseAdmin = createClient(
-  supabaseUrl,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-/**
- * Create a client-side Supabase client from environment variables.
- * Used in client components/pages that import from @/lib/supabase.
- */
 export function createBrowserClient() {
-  return createClient(supabaseUrl, supabaseAnonKey);
+  return null as any;
 }

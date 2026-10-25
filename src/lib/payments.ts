@@ -5,7 +5,7 @@
  * In dev mode without Stripe credentials, premium is granted immediately.
  */
 
-import { supabaseAdmin } from "@/lib/supabase";
+import { query } from "@/lib/db";
 
 export interface PaymentResult {
   success: boolean;
@@ -22,20 +22,24 @@ export async function activatePremium(
 ): Promise<PaymentResult> {
   const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-  await supabaseAdmin
-    .from("subscriptions")
-    .upsert(
-      {
-        user_id: userId,
-        plan: "premium",
-        status: "active",
-        stripe_customer_id: provider === "stripe" ? referenceId : null,
-        stripe_subscription_id: referenceId,
-        current_period_end: periodEnd,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id" }
-    );
+  await query(
+    `INSERT INTO subscriptions (user_id, plan, status, stripe_customer_id, stripe_subscription_id, current_period_end, updated_at)
+     VALUES ($1, 'premium', 'active', $2, $3, $4, $5)
+     ON CONFLICT (user_id) DO UPDATE SET
+       plan = EXCLUDED.plan,
+       status = EXCLUDED.status,
+       stripe_customer_id = EXCLUDED.stripe_customer_id,
+       stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+       current_period_end = EXCLUDED.current_period_end,
+       updated_at = EXCLUDED.updated_at`,
+    [
+      userId,
+      provider === "stripe" ? referenceId : null,
+      referenceId,
+      periodEnd,
+      new Date().toISOString(),
+    ]
+  );
 
   return {
     success: true,
@@ -46,13 +50,12 @@ export async function activatePremium(
 }
 
 export async function getUserPlan(userId: string) {
-  const { data } = await supabaseAdmin
-    .from("subscriptions")
-    .select("plan, status, current_period_end")
-    .eq("user_id", userId)
-    .single();
+  const res = await query(
+    "SELECT plan, status, current_period_end FROM subscriptions WHERE user_id = $1",
+    [userId]
+  );
 
-  return data;
+  return res.rows[0];
 }
 
 export function formatKes(amount: number): string {

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
 
 /**
  * M-Pesa Daraja callback endpoint.

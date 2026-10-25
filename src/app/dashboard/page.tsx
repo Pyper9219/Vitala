@@ -1,8 +1,7 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { cookies } from "next/headers";
+import { verifyToken } from "@/lib/auth";
+import { query } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,89 +10,79 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  CheckCircle2,
   Clock,
   Plus,
   ShoppingCart,
   TrendingUp,
   Activity,
-  Calendar,
   Flame,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export default function Dashboard() {
-  const [meals, setMeals] = useState<any[]>([]);
-  const [workouts, setWorkouts] = useState<any[]>([]);
-  const [shoppingItems, setShoppingItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+interface Meal {
+  id: string;
+  title: string;
+  meal_type: string;
+  prep_time_minutes: number;
+  completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+}
 
-  useEffect(() => {
-    const loadData = async () => {
-      const today = new Date().toISOString().split("T")[0];
+interface Workout {
+  id: string;
+  title: string;
+  duration_minutes: number;
+  completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+}
 
-      const [mRes, wRes, sRes] = await Promise.all([
-        supabase
-          .from("meals")
-          .select("*, meal_plan_id")
-          .eq("completed", false)
-          .order("created_at", { ascending: false })
-          .limit(5),
-        supabase
-          .from("workouts")
-          .select("*")
-          .eq("completed", false)
-          .order("created_at", { ascending: false })
-          .limit(5),
-        supabase
-          .from("shopping_items")
-          .select("*")
-          .eq("purchased", false)
-          .order("created_at", { ascending: false })
-          .limit(5),
-      ]);
+interface ShoppingItem {
+  id: string;
+  name: string;
+  purchased: boolean;
+  created_at: string;
+}
 
-      setMeals(mRes.data ?? []);
-      setWorkouts(wRes.data ?? []);
-      setShoppingItems(sRes.data ?? []);
-      setLoading(false);
-    };
+async function getCurrentUser() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("vitala_session")?.value;
+  if (!token) return null;
+  const payload = verifyToken(token);
+  if (!payload) return null;
+  const users = await query(
+    "SELECT id, email, name FROM users WHERE id = $1",
+    [payload.id]
+  );
+  return users.rows[0] ?? null;
+}
 
-    loadData();
-  }, []);
+export default async function Dashboard() {
+  const user = await getCurrentUser();
+  const userId = user?.id ?? "";
+
+  const [mealsRes, workoutsRes, shoppingRes] = await Promise.all([
+    query(
+      "SELECT id, title, meal_type, prep_time_minutes, completed, completed_at, created_at FROM meals ORDER BY created_at DESC LIMIT 5"
+    ),
+    query(
+      "SELECT id, title, duration_minutes, completed, completed_at, created_at FROM workouts WHERE user_id = $1 ORDER BY created_at DESC LIMIT 5",
+      [userId]
+    ),
+    query(
+      "SELECT id, name, purchased, created_at FROM shopping_items WHERE user_id = $1 ORDER BY created_at DESC LIMIT 5",
+      [userId]
+    ),
+  ]);
+
+  const meals = mealsRes.rows;
+  const workouts = workoutsRes.rows;
+  const shoppingItems = shoppingRes.rows;
 
   const mealsCompleted = meals.filter((m) => m.completed).length;
   const workoutsCompleted = workouts.filter((w) => w.completed).length;
   const shoppingPurchased = shoppingItems.filter((s) => s.purchased).length;
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background py-12 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="space-y-8">
-            <div className="flex flex-col lg:flex-row gap-6 items-start justify-between">
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold">Dashboard</h1>
-                <p className="text-muted-foreground mt-2">
-                  Your wellness overview for today.
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" asChild>
-                  <Link href="/meals">New meal plan</Link>
-                </Button>
-                <Button asChild>
-                  <Link href="/workouts">New workout</Link>
-                </Button>
-              </div>
-            </div>
-
-            <SkeletonGrid className="grid md:grid-cols-3 gap-6" />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background py-12 px-4">
@@ -278,7 +267,7 @@ export default function Dashboard() {
                           className="flex items-center justify-between p-2 rounded-lg border bg-background"
                         >
                           <div className="text-sm">{item.name}</div>
-                          <Badge variant="outline" size="sm">
+                          <Badge variant="outline">
                             {item.purchased ? "✓" : "○"}
                           </Badge>
                         </div>
@@ -321,19 +310,6 @@ export default function Dashboard() {
           </section>
         </div>
       </div>
-    </div>
-  );
-}
-
-function SkeletonGrid({ className }: { className?: string }) {
-  return (
-    <div className={className}>
-      {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="rounded-xl border bg-card p-6 animate-pulse">
-          <div className="h-4 bg-muted rounded w-3/4 mb-4" />
-          <div className="h-24 bg-muted rounded" />
-        </div>
-      ))}
     </div>
   );
 }

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { stripe, getPlan, getStripePriceId } from "@/lib/stripe";
-import { supabaseAdmin } from "@/lib/supabase";
+import { query } from "@/lib/db";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
@@ -20,40 +23,42 @@ export async function POST(req: Request) {
 
     if (planId === "free") {
       // Downgrade to free immediately
-      await supabaseAdmin
-        .from("subscriptions")
-        .upsert(
-          {
-            user_id: userId,
-            plan: "free",
-            status: "active",
-            current_period_end: null,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id" }
-        );
+      await query(
+        `INSERT INTO subscriptions (user_id, plan, status, current_period_end, updated_at)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (user_id) DO UPDATE SET
+           plan = EXCLUDED.plan,
+           status = EXCLUDED.status,
+           current_period_end = EXCLUDED.current_period_end,
+           updated_at = EXCLUDED.updated_at`,
+        [userId, "free", "active", null, new Date().toISOString()]
+      );
       return NextResponse.json({ success: true, plan: "free" });
     }
 
     const priceId = getStripePriceId(planId as any);
     if (!priceId || priceId.includes("placeholder")) {
       // Dev mode: simulate premium activation without Stripe
-      await supabaseAdmin
-        .from("subscriptions")
-        .upsert(
-          {
-            user_id: userId,
-            plan: "premium",
-            status: "active",
-            stripe_customer_id: `dev_customer_${userId}`,
-            stripe_subscription_id: `dev_sub_${userId}`,
-            current_period_end: new Date(
-              Date.now() + 30 * 24 * 60 * 60 * 1000
-            ).toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id" }
-        );
+      await query(
+        `INSERT INTO subscriptions (user_id, plan, status, stripe_customer_id, stripe_subscription_id, current_period_end, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (user_id) DO UPDATE SET
+           plan = EXCLUDED.plan,
+           status = EXCLUDED.status,
+           stripe_customer_id = EXCLUDED.stripe_customer_id,
+           stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+           current_period_end = EXCLUDED.current_period_end,
+           updated_at = EXCLUDED.updated_at`,
+        [
+          userId,
+          "premium",
+          "active",
+          `dev_customer_${userId}`,
+          `dev_sub_${userId}`,
+          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          new Date().toISOString(),
+        ]
+      );
       return NextResponse.json({
         success: true,
         plan: "premium",
@@ -63,22 +68,21 @@ export async function POST(req: Request) {
     }
 
     // Get or create Stripe customer
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("email, display_name")
-      .eq("id", userId)
-      .single();
+    const profileRes = await query(
+      `SELECT email, display_name FROM profiles WHERE id = $1`,
+      [userId]
+    );
+    const profile = profileRes.rows[0] || {};
 
-    let customerId: string | null = null;
-    const { data: sub } = await supabaseAdmin
-      .from("subscriptions")
-      .select("stripe_customer_id")
-      .eq("user_id", userId)
-      .single();
+    let customerId: string | undefined = undefined;
+    const subRes = await query(
+      `SELECT stripe_customer_id FROM subscriptions WHERE user_id = $1`,
+      [userId]
+    );
 
-    if (sub?.stripe_customer_id) {
-      customerId = sub.stripe_customer_id;
-    } else if (profile?.email) {
+    if (subRes.rows[0]?.stripe_customer_id) {
+      customerId = subRes.rows[0].stripe_customer_id;
+    } else if (profile.email) {
       const customer = await stripe.customers.create({
         email: profile.email,
         name: profile.display_name || undefined,

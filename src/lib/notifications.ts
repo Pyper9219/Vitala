@@ -1,4 +1,5 @@
 import twilio from "twilio";
+import { query } from "@/lib/db";
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -7,8 +8,12 @@ const fromNumber = process.env.TWILIO_FROM_NUMBER;
 
 let client: twilio.Twilio | null = null;
 
-if (accountSid && authToken) {
-  client = twilio(accountSid, authToken);
+function getClient() {
+  if (client) return client;
+  if (accountSid && authToken) {
+    client = twilio(accountSid, authToken);
+  }
+  return client;
 }
 
 export type NotificationChannel = "in_app" | "email" | "sms" | "whatsapp";
@@ -32,15 +37,11 @@ export async function sendNotification(payload: NotificationPayload) {
   // In-app notification: store in DB (best-effort; non-failing)
   if (channel === "in_app" || channel === "email") {
     try {
-      const { supabaseAdmin } = await import("@/lib/supabase");
-      await supabaseAdmin.from("notifications").insert({
-        user_id: userId,
-        title,
-        body,
-        channel,
-        read: false,
-        created_at: new Date().toISOString(),
-      });
+      await query(
+        `INSERT INTO notifications (user_id, title, body, channel, read, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [userId, title, body, channel, false, new Date().toISOString()],
+      );
     } catch {
       // notifications table may not exist yet; non-fatal
     }
@@ -71,7 +72,8 @@ async function sendTwilioMessage({
   body: string;
   channel: NotificationChannel;
 }) {
-  if (!client) {
+  const twilioClient = getClient();
+  if (!twilioClient) {
     console.log(
       `[Dev Mode] Twilio not configured. Would send ${channel} to ${to}:\n${body}`
     );
@@ -83,7 +85,7 @@ async function sendTwilioMessage({
   const toAddress = isWhatsApp ? `whatsapp:${to}` : to;
 
   try {
-    const message = await client.messages.create({
+    const message = await twilioClient.messages.create({
       body,
       from,
       to: toAddress,

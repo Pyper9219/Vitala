@@ -76,8 +76,8 @@ export default function NotificationsPage() {
     );
   };
 
-  const handleSave = async (e: FormDataEvent) => {
-    e.preventDefault();
+  const handleSave = async (e?: React.MouseEvent | React.FormEvent<HTMLFormElement>) => {
+    e?.preventDefault?.();
     setSaving(true);
     try {
       await fetch("/api/notifications", {

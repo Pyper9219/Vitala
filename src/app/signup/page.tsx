@@ -1,44 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { CardHeader } from "@/components/ui/card";
 import { CardTitle } from "@/components/ui/card";
 import { CardContent } from "@/components/ui/card";
-import { Mail, Lock, ArrowRight } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
   const router = useRouter();
 
-  async function handleSubmit(e: FormDataEvent) {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    const { error: err } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    setLoading(false);
-    if (err) {
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Signup failed");
+      }
+
+      router.push("/onboarding");
+    } catch (err: any) {
+      setLoading(false);
       setError(err.message);
       return;
     }
-    router.push("/onboarding");
-  }
+
+    setLoading(false);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/50 px-4">
@@ -75,7 +79,7 @@ export default function Signup() {
           </div>
           {error && (
             <p className="text-sm text-destructive flex items-center gap-2">
-              <ArrowRight className="h-3 w-3" /> {error}
+              {error}
             </p>
           )}
           <Button type="submit" disabled={loading} className="w-full" size="lg">

@@ -1,54 +1,58 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { verifyToken } from '@/lib/auth';
 
-export async function middleware(request: NextRequest) {
-  let session = null;
+const PUBLIC_PATHS = [
+  '/api/auth',
+  '/login',
+  '/signup',
+  '/auth/error',
+  '/auth/callback',
+  '/api/webhooks',
+];
 
-  const hasSupabaseConfig =
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const PROTECTED_PREFIXES = [
+  '/dashboard',
+  '/meals',
+  '/workouts',
+  '/shopping',
+  '/progress',
+  '/account',
+  '/onboarding',
+  '/subscription',
+];
 
-  if (hasSupabaseConfig) {
-    try {
-      const cookieStore = await cookies();
-      const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        {
-          cookies: {
-            get(name: string) {
-              return cookieStore.get(name)?.value;
-            },
-          },
-        }
-      );
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-      const {
-        data: { session: s },
-      } = await supabase.auth.getSession();
-      session = s;
-    } catch {
-      session = null;
-    }
+  const isStatic =
+    pathname.startsWith('/_next') ||
+    pathname === '/favicon.ico' ||
+    /\.[a-z]+$/.test(pathname);
+
+  const isPublic =
+    PUBLIC_PATHS.some((p) => pathname.startsWith(p)) ||
+    pathname === '/' ||
+    isStatic;
+
+  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
+
+  const token = request.cookies.get('vitala_session')?.value;
+  const payload = token ? verifyToken(token) : null;
+
+  if (isProtected && !payload) {
+    const url = new URL('/login', request.url);
+    url.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(url);
   }
 
-  const protectedRoutes = ["/dashboard", "/meals", "/workouts", "/shopping", "/progress", "/account", "/onboarding"];
-  const authRoutes = ["/login", "/signup"];
-
-  const isProtected = protectedRoutes.some((r) => request.nextUrl.pathname.startsWith(r));
-  const isAuth = authRoutes.includes(request.nextUrl.pathname);
-
-  if (isProtected && !session) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  if (isAuth && session) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  if ((pathname === '/login' || pathname === '/signup') && payload) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.png$).*)'],
 };

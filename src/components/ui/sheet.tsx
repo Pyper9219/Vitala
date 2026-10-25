@@ -8,9 +8,13 @@ const Sheet = SheetPrimitive.Root;
 
 const SheetTrigger = SheetPrimitive.Trigger;
 
+interface SheetContentProps extends SheetPrimitive.DialogContentProps {
+  side?: "left" | "right";
+}
+
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
-  SheetPrimitive.DialogContentProps
+  SheetContentProps
 >(({ className, children, side = "right", ...props }, ref) => (
   <SheetPrimitive.Portal>
     <SheetPrimitive.Overlay
@@ -32,33 +36,6 @@ const SheetContent = React.forwardRef<
   </SheetPrimitive.Portal>
 ));
 SheetContent.displayName = SheetPrimitive.Content.displayName;
-
-const SheetHeader = React.forwardRef<
-  React.ElementRef<typeof SheetPrimitive.Header>,
-  SheetPrimitive.DialogHeaderProps
->(({ className, ...props }, ref) => (
-  <SheetPrimitive.Header
-    ref={ref}
-    className={cn("flex flex-col space-y-1.5 p-6", className)}
-    {...props}
-  />
-));
-SheetHeader.displayName = SheetPrimitive.Header.displayName;
-
-const SheetFooter = React.forwardRef<
-  React.ElementRef<typeof SheetPrimitive.Footer>,
-  SheetPrimitive.DialogFooterProps
->(({ className, ...props }, ref) => (
-  <SheetPrimitive.Footer
-    ref={ref}
-    className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-2 p-6 border-t",
-      className
-    )}
-    {...props}
-  />
-));
-SheetFooter.displayName = SheetPrimitive.Footer.displayName;
 
 const SheetTitle = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Title>,
@@ -88,8 +65,6 @@ export {
   Sheet,
   SheetTrigger,
   SheetContent,
-  SheetHeader,
-  SheetFooter,
   SheetTitle,
   SheetDescription,
 };

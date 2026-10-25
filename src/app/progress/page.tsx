@@ -1,8 +1,9 @@
-"use client";
+"use server";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { query } from "@/lib/db";
+import { verifyToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,73 +21,82 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export default function ProgressPage() {
-  const [entries, setEntries] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [newEntry, setNewEntry] = useState({
-    entry_date: new Date().toISOString().split("T")[0],
-    meals_completed: 0,
-    workouts_completed: 0,
-    energy_level: 3,
-    mood: "",
-    sleep_hours: "",
-    notes: "",
-  });
+interface ProgressEntry {
+  id: string;
+  user_id: string;
+  entry_date: string;
+  meals_completed: number;
+  workouts_completed: number;
+  energy_level: number;
+  mood: string | null;
+  sleep_hours: number | null;
+  notes: string | null;
+  created_at: string;
+}
 
-  useEffect(() => {
-    loadEntries();
-  }, []);
+async function getCurrentUserId(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("vitala_session")?.value;
+  if (!token) return null;
+  const payload = verifyToken(token);
+  if (!payload) return null;
+  return payload.id ?? null;
+}
 
-  const loadEntries = async () => {
-    const { data } = await supabase
-      .from("progress_entries")
-      .select("*")
-      .order("entry_date", { ascending: false })
-      .limit(30);
+async function getProgressEntries(userId: string): Promise<ProgressEntry[]> {
+  const res = await query(
+    `SELECT id, user_id, entry_date, meals_completed, workouts_completed,
+            energy_level, mood, sleep_hours, notes, created_at
+     FROM progress_entries
+     WHERE user_id = $1
+     ORDER BY entry_date DESC
+     LIMIT 30`,
+    [userId]
+  );
+  return res.rows as ProgressEntry[];
+}
 
-    setEntries(data ?? []);
-    setLoading(false);
-  };
+interface AddEntryInput {
+  entry_date: string;
+  meals_completed: number;
+  workouts_completed: number;
+  energy_level: number;
+  mood: string;
+  sleep_hours: number | null;
+  notes: string;
+}
 
-  const addEntry = async (e: FormDataEvent) => {
-    e.preventDefault();
-
-    const { error } = await supabase.from("progress_entries").insert({
-      entry_date: newEntry.entry_date,
-      meals_completed: Number(newEntry.meals_completed) || 0,
-      workouts_completed: Number(newEntry.workouts_completed) || 0,
-      energy_level: Number(newEntry.energy_level) || 3,
-      mood: newEntry.mood,
-      sleep_hours: Number(newEntry.sleep_hours) || null,
-      notes: newEntry.notes,
-    });
-
-    if (!error) {
-      setNewEntry({
-        entry_date: new Date().toISOString().split("T")[0],
-        meals_completed: 0,
-        workouts_completed: 0,
-        energy_level: 3,
-        mood: "",
-        sleep_hours: "",
-        notes: "",
-      });
-      loadEntries();
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background py-12 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold">Progress</h1>
-          <div className="mt-8 animate-pulse">
-            <div className="h-4 bg-muted rounded w-1/2" />
-          </div>
-        </div>
-      </div>
-    );
+export async function addEntry(formData: FormData) {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    redirect("/login");
   }
+
+  const entryDate = formData.get("entry_date") as string;
+  const mealsCompleted = Number(formData.get("meals_completed")) || 0;
+  const workoutsCompleted = Number(formData.get("workouts_completed")) || 0;
+  const energyLevel = Number(formData.get("energy_level")) || 3;
+  const mood = (formData.get("mood") as string) || "";
+  const sleepHoursRaw = formData.get("sleep_hours") as string;
+  const sleepHours = sleepHoursRaw ? Number(sleepHoursRaw) : null;
+  const notes = (formData.get("notes") as string) || "";
+
+  await query(
+    `INSERT INTO progress_entries
+       (user_id, entry_date, meals_completed, workouts_completed,
+        energy_level, mood, sleep_hours, notes)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [userId, entryDate, mealsCompleted, workoutsCompleted, energyLevel, mood, sleepHours, notes]
+  );
+}
+
+export default async function ProgressPage() {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    redirect("/login");
+  }
+
+  const entries = await getProgressEntries(userId);
 
   const latest = entries[0];
   const avgEnergy =
@@ -118,9 +128,11 @@ export default function ProgressPage() {
               Track your habits and see how you're doing.
             </p>
           </div>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" /> Log today
-          </Button>
+          <form action={addEntry}>
+            <Button type="submit">
+              <Plus className="mr-2 h-4 w-4" /> Log today
+            </Button>
+          </form>
         </div>
 
         {/* Overview stats */}
@@ -175,14 +187,14 @@ export default function ProgressPage() {
                 <CardTitle>Log today's progress</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={addEntry} className="space-y-4">
+                <form action={addEntry} className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Date</label>
                     <input
                       type="date"
+                      name="entry_date"
+                      defaultValue={new Date().toISOString().split("T")[0]}
                       className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      value={newEntry.entry_date}
-                      onChange={(e) => setNewEntry({ ...newEntry, entry_date: e.target.value })}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -190,20 +202,20 @@ export default function ProgressPage() {
                       <label className="text-sm font-medium">Meals completed</label>
                       <input
                         type="number"
+                        name="meals_completed"
                         min="0"
+                        defaultValue={0}
                         className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        value={newEntry.meals_completed}
-                        onChange={(e) => setNewEntry({ ...newEntry, meals_completed: Number(e.target.value) || 0 })}
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Workouts completed</label>
                       <input
                         type="number"
+                        name="workouts_completed"
                         min="0"
+                        defaultValue={0}
                         className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        value={newEntry.workouts_completed}
-                        onChange={(e) => setNewEntry({ ...newEntry, workouts_completed: Number(e.target.value) || 0 })}
                       />
                     </div>
                   </div>
@@ -212,22 +224,21 @@ export default function ProgressPage() {
                       <label className="text-sm font-medium">Energy level (1-5)</label>
                       <input
                         type="number"
+                        name="energy_level"
                         min="1"
                         max="5"
+                        defaultValue={3}
                         className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        value={newEntry.energy_level}
-                        onChange={(e) => setNewEntry({ ...newEntry, energy_level: Number(e.target.value) || 3 })}
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Sleep (hours)</label>
                       <input
                         type="number"
+                        name="sleep_hours"
                         min="0"
                         step="0.5"
                         className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        value={newEntry.sleep_hours}
-                        onChange={(e) => setNewEntry({ ...newEntry, sleep_hours: e.target.value })}
                       />
                     </div>
                   </div>
@@ -238,13 +249,10 @@ export default function ProgressPage() {
                         <button
                           key={mood}
                           type="button"
-                          onClick={() =>
-                            setNewEntry({ ...newEntry, mood: mood })
-                          }
+                          name="mood"
+                          value={mood}
                           className={`px-3 py-2 rounded-md text-sm border transition-colors ${
-                            newEntry.mood === mood
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : "bg-background border-input hover:bg-muted"
+                            "bg-background border-input hover:bg-muted"
                           }`}
                         >
                           {mood}
@@ -255,9 +263,8 @@ export default function ProgressPage() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Notes</label>
                     <textarea
+                      name="notes"
                       className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      value={newEntry.notes}
-                      onChange={(e) => setNewEntry({ ...newEntry, notes: e.target.value })}
                       placeholder="How did today feel?..."
                       rows={2}
                     />
@@ -290,7 +297,7 @@ export default function ProgressPage() {
                           <div className="text-sm font-medium">
                             {new Date(entry.entry_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                           </div>
-                          <Badge variant="outline" size="sm">
+                          <Badge variant="outline">
                             {entry.energy_level}/5
                           </Badge>
                         </div>

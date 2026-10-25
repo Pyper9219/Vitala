@@ -34,7 +34,7 @@ export default function AIPage() {
     scrollRef?.scrollIntoView({ behavior: "smooth" });
   }, [messages, scrollRef]);
 
-  const sendMessage = async (e: FormDataEvent) => {
+  const sendMessage = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!input.trim()) return;
 

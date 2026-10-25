@@ -33,33 +33,6 @@ const DialogContent = React.forwardRef<
 ));
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
-const DialogHeader = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Header>,
-  DialogPrimitive.DialogHeaderProps
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Header
-    ref={ref}
-    className={cn("grid gap-1.5 text-center sm:text-left", className)}
-    {...props}
-  />
-));
-DialogHeader.displayName = DialogPrimitive.Header.displayName;
-
-const DialogFooter = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Footer>,
-  DialogPrimitive.DialogFooterProps
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Footer
-    ref={ref}
-    className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-2",
-      className
-    )}
-    {...props}
-  />
-));
-DialogFooter.displayName = DialogPrimitive.Footer.displayName;
-
 const DialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
   DialogPrimitive.DialogTitleProps
@@ -88,8 +61,6 @@ export {
   Dialog,
   DialogTrigger,
   DialogContent,
-  DialogHeader,
-  DialogFooter,
   DialogTitle,
   DialogDescription,
 };
