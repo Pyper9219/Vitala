@@ -1,8 +1,11 @@
 import { neon, neonConfig } from '@neondatabase/serverless';
 
 // Use Neon directly (Edge-compatible); no pg Pool needed in client bundles.
-// Do not hardcode fetchEndpoint — Neon derives it from DATABASE_URL's host.
-// A generic sql.neon.tech endpoint fails against project-specific Neon hosts.
+// Neon's default fetchEndpoint derivation (ep-xxx.region.aws.neon.tech ->
+// ep-xxx.region.aws.api.neon.tech/sql) produces unreachable hosts for pooled
+// connections. Derive the regional API endpoint instead:
+//   ep-withered-base-b5xslse5-pooler.c-7.us-east-2.aws.neon.tech
+//     -> https://api.c-7.us-east-2.aws.neon.tech/sql
 // Create the sql client lazily so routes that don't touch the database
 // don't crash at module load if DATABASE_URL isn't available yet.
 let sql: ReturnType<typeof neon> | null = null;
@@ -16,6 +19,9 @@ function getSql() {
         '(postgresql://user:password@host/db?sslmode=require) in .env.local or your deployment env.'
       );
     }
+    const dbHost = new URL(DATABASE_URL.replace('postgresql://', 'https://')).hostname;
+    const regionSuffix = dbHost.replace(/^[^.]+\./, '');
+    neonConfig.fetchEndpoint = `https://api.${regionSuffix}/sql`;
     sql = neon(DATABASE_URL);
   }
   return sql;
