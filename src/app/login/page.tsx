@@ -35,7 +35,7 @@ export default function Login() {
         throw new Error(data.error || "Sign in failed");
       }
 
-      router.push("/dashboard");
+      await router.push("/dashboard");
     } catch (err: any) {
       setLoading(false);
       setError(err.message);

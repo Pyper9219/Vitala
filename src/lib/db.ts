@@ -27,11 +27,20 @@ function getSql() {
   return sql;
 }
 
+// Maximum time (ms) to wait for a Neon query before failing with a clear
+// error instead of hanging the request indefinitely (e.g. sign-in stuck on
+// "Signing in…").
+const QUERY_TIMEOUT_MS = 10_000;
+
 // Helper: run a SQL query with parameterized $1, $2, etc. placeholders.
 // neon() is a tagged-template API in @neondatabase/serverless v1.x; use
 // sql.query(text, params) instead of calling sql(...) as a function.
 export async function query<T = any>(text: string, params: unknown[] = []): Promise<{ rows: T[]; rowCount: number }> {
-  const rows = (await getSql().query(text, params)) as unknown as T[];
+  const promise = getSql().query(text, params) as Promise<unknown[]>;
+  const timeout = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error(`Database query timed out after ${QUERY_TIMEOUT_MS}ms`)), QUERY_TIMEOUT_MS);
+  });
+  const rows = (await Promise.race([promise, timeout])) as unknown as T[];
   return { rows, rowCount: rows.length };
 }
 

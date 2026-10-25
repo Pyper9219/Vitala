@@ -36,7 +36,8 @@ export async function POST(request: Request): Promise<Response> {
     });
     response.headers.append('Set-Cookie', serializeSessionCookie(accessToken));
     return response;
-  } catch {
+  } catch (error) {
+    console.error('Sign in error:', error);
     return NextResponse.json(
       { error: 'Failed to sign in' },
       { status: 500 },
