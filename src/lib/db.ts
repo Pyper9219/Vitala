@@ -1,9 +1,8 @@
 import { neon, neonConfig } from '@neondatabase/serverless';
 
-// Configure fetch endpoint before creating the sql client
-neonConfig.fetchEndpoint = 'https://sql.neon.tech';
-
 // Use Neon directly (Edge-compatible); no pg Pool needed in client bundles.
+// Do not hardcode fetchEndpoint — Neon derives it from DATABASE_URL's host.
+// A generic sql.neon.tech endpoint fails against project-specific Neon hosts.
 // Create the sql client lazily so routes that don't touch the database
 // don't crash at module load if DATABASE_URL isn't available yet.
 let sql: ReturnType<typeof neon> | null = null;
