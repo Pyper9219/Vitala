@@ -40,9 +40,8 @@ export async function POST(request: Request): Promise<Response> {
         { status: 409 },
       );
     }
-    return NextResponse.json(
-      { error: 'Failed to create account' },
-      { status: 500 },
-    );
+    const message = error instanceof Error ? error.message : 'Failed to create account';
+    console.error('Signup error:', error);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
