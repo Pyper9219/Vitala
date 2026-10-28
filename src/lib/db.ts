@@ -30,18 +30,32 @@ function getSql() {
 // Maximum time (ms) to wait for a Neon query before failing with a clear
 // error instead of hanging the request indefinitely (e.g. sign-in stuck on
 // "Signing in…").
-const QUERY_TIMEOUT_MS = 10_000;
+const QUERY_TIMEOUT_MS = 8_000;
 
 // Helper: run a SQL query with parameterized $1, $2, etc. placeholders.
 // neon() is a tagged-template API in @neondatabase/serverless v1.x; use
 // sql.query(text, params) instead of calling sql(...) as a function.
+// Uses AbortController so a timeout actually cancels the underlying Neon
+// fetch instead of leaving it running in the background.
 export async function query<T = any>(text: string, params: unknown[] = []): Promise<{ rows: T[]; rowCount: number }> {
-  const promise = getSql().query(text, params) as Promise<unknown[]>;
+  const controller = new AbortController();
+  // Route the abort signal through fetchOptions so the underlying Neon fetch
+  // is actually cancelled on timeout (HTTPQueryOptions has no top-level
+  // 'signal' property in @neondatabase/serverless v1.x).
+  const promise = getSql().query(text, params, { fetchOptions: { signal: controller.signal } }) as Promise<unknown[]>;
+  let timer: NodeJS.Timeout | null = null;
   const timeout = new Promise<never>((_, reject) => {
-    setTimeout(() => reject(new Error(`Database query timed out after ${QUERY_TIMEOUT_MS}ms`)), QUERY_TIMEOUT_MS);
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error(`Database query timed out after ${QUERY_TIMEOUT_MS}ms`));
+    }, QUERY_TIMEOUT_MS);
   });
-  const rows = (await Promise.race([promise, timeout])) as unknown as T[];
-  return { rows, rowCount: rows.length };
+  try {
+    const rows = (await Promise.race([promise, timeout])) as unknown as T[];
+    return { rows, rowCount: rows.length };
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 export async function getClient() {

@@ -8,10 +8,6 @@ if (!DATABASE_URL) {
 
 const pool = new Pool({
   connectionString: DATABASE_URL,
-  ssl:
-    process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: false }
-      : false,
 });
 
 const migrations = [
@@ -84,13 +80,27 @@ const migrations = [
   CREATE TABLE IF NOT EXISTS progress_entries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    entry_date DATE NOT NULL UNIQUE,
+    entry_date DATE NOT NULL,
     meals_completed INT NOT NULL DEFAULT 0,
     workouts_completed INT NOT NULL DEFAULT 0,
     energy_level INT CHECK (energy_level BETWEEN 1 AND 5),
     mood TEXT,
     sleep_hours NUMERIC,
     notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT progress_entries_user_id_entry_date_key UNIQUE (user_id, entry_date)
+  );
+  `,
+  `ALTER TABLE progress_entries DROP CONSTRAINT IF EXISTS progress_entries_entry_date_key;`,
+  `
+  CREATE TABLE IF NOT EXISTS notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    channel TEXT NOT NULL DEFAULT 'in_app'
+      CHECK (channel IN ('in_app','email','sms','whatsapp')),
+    read BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
   `,
@@ -142,7 +152,8 @@ const migrations = [
   `CREATE INDEX IF NOT EXISTS idx_workouts_user_id ON workouts(user_id);`,
   `CREATE INDEX IF NOT EXISTS idx_progress_entries_user_id ON progress_entries(user_id);`,
   `CREATE INDEX IF NOT EXISTS idx_shopping_items_user_id ON shopping_items(user_id);`,
-  `CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_user_id_unique ON subscriptions(user_id);`,
+  `CREATE INDEX IF NOT EXISTS idx_notifications_user_id_created_at ON notifications(user_id, created_at DESC);`,
 ];
 
 async function main() {

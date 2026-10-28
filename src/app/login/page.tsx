@@ -25,10 +25,11 @@ export default function Login() {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
 
       const res = await fetch("/api/auth/signin", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
         signal: controller.signal,
@@ -44,11 +45,13 @@ export default function Login() {
       await router.push("/dashboard");
     } catch (err: any) {
       setLoading(false);
-      setError(
-        err.name === "AbortError"
-          ? "Sign in timed out. Please try again."
-          : err.message,
-      );
+      if (err.name === "AbortError") {
+        setError(
+          "Sign in is taking longer than expected. Please check your connection and try again.",
+        );
+      } else {
+        setError(err.message);
+      }
       return;
     }
 

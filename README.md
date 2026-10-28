@@ -7,7 +7,7 @@ reminders (in-app, SMS, WhatsApp).
 ## Stack
 
 - **Framework:** Next.js 16 (App Router), TypeScript, Tailwind CSS v4
-- **Database/Auth:** Supabase (PostgreSQL + Auth + Row Level Security)
+- **Database/Auth:** Neon PostgreSQL with application-managed JWT sessions
 - **AI:** OpenAI (gpt-4o-mini) for the wellness assistant
 - **Payments:** Stripe (cards) + M-Pesa (Kenya, placeholder)
 - **Notifications:** Twilio (SMS/WhatsApp) — dev mode if credentials omitted
@@ -21,28 +21,36 @@ reminders (in-app, SMS, WhatsApp).
 npm install
 ```
 
+Use Node.js 22.6 or newer to run the included TypeScript database migration.
+
 ### 2. Configure environment
 
 ```bash
 cp .env.example .env.local
 ```
 
-Edit `.env.local` and fill in your Supabase URL/anon key at minimum. All other
-services degrade gracefully (AI shows a setup message, notifications log to
-console, M-Pesa is a placeholder).
+Edit `.env.local` and set `DATABASE_URL` to your Neon connection string and
+`JWT_SECRET` to a long, random secret. The remaining integrations are optional
+for local development.
 
 ### 3. Set up the database
 
-Run `supabase/schema.sql` in your Supabase project's SQL Editor to create
-tables, enable Row Level Security, and add indexes.
+Run the Neon migration once against your database:
+
+```bash
+npm run db:migrate
+```
+
+This uses `DATABASE_URL` from `.env.local`. Use a Neon pooled connection string
+with `sslmode=require`. The migration creates the tables and indexes used by the
+app. Run it before deploying, and again after schema changes.
 
 Required env vars for the app to work:
 
 | Variable | Purpose |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (server-side admin ops) |
+| `DATABASE_URL` | Neon PostgreSQL connection string |
+| `JWT_SECRET` | Secret used to sign and verify application sessions |
 
 ### 4. Run the dev server
 
@@ -60,9 +68,9 @@ src/
     layout.tsx            Root layout + metadata
     page.tsx              Landing page
     globals.css           Vitala brand tokens (light/dark)
-    login/                Email/password + Google OAuth sign-in
+    login/                Email/password sign-in
     signup/               Account creation → onboarding
-    auth/callback/        OAuth callback handler
+    auth/callback/        Authentication callback page
     onboarding/           4-step profile/diet/fitness/reminders setup
     dashboard/            Today's meals, workouts, quick actions
     meals/                Meal planner + CRUD
@@ -90,20 +98,20 @@ src/
     navbar.tsx            Top navigation
     footer.tsx            Site footer
   lib/
-    supabase.ts           Supabase client + admin client
-    auth.ts               Server-side Supabase client (cookies)
+    db.ts                 Neon PostgreSQL query helper
+    auth.ts               Password authentication + JWT sessions
     notifications.ts      In-app/email/SMS/WhatsApp sender
     payments.ts           Plan helpers + Premium activation
     stripe.ts             Stripe client + plan definitions
     utils.ts              cn() helper
-supabase/
-  schema.sql              Full database schema + RLS policies
+scripts/
+  migrate-neon.ts         Neon PostgreSQL schema migration
 .env.example              Environment variable template
 ```
 
 ## Features
 
-- **Auth:** Email/password sign-in/sign-up, Google OAuth, protected routes
+- **Auth:** Email/password sign-in/sign-up, JWT sessions, protected routes
 - **Onboarding:** 4-step setup capturing diet, budget, fitness, reminders
 - **Meal planner:** Create day/week/month plans, add/edit meals, toggle complete
 - **Workout planner:** Schedule workouts by category, mark complete
@@ -122,8 +130,8 @@ supabase/
   keys, the Premium plan can be activated instantly in dev mode.
 - M-Pesa integration is a placeholder. Point `MPESA_CALLBACK_URL` at your
   deployed `/api/mpesa/callback` and add Daraja credentials to go live.
-- All user data is protected by Supabase Row Level Security — users can only
-  access their own rows.
+- Database access uses server-side SQL queries and application-managed
+  authentication. Keep `DATABASE_URL` and `JWT_SECRET` private.
 
 ## Deploy on Vercel
 
@@ -147,14 +155,14 @@ git push origin main
 
 ### 3. Add environment variables
 
-In **Vercel Project Settings → Environment Variables**, add the following (copy from `.env.example` and fill in real values):
+In **Vercel Project Settings → Environment Variables**, add the following
+(copy names from `.env.example` and use real values):
 
 | Variable | Required | Notes |
 |---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase public anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service role key (server-side admin ops) |
-| `NEXT_PUBLIC_APP_URL` | Yes | Your Vercel domain, e.g. `https://vitala.vercel.app` |
+| `DATABASE_URL` | Yes | Neon pooled PostgreSQL URL with `sslmode=require` |
+| `JWT_SECRET` | Yes | Long, random secret; do not expose it to the browser |
+| `NEXT_PUBLIC_APP_URL` | Yes | Your production URL, e.g. `https://vitala.vercel.app` |
 | `OPENAI_API_KEY` | No | AI assistant falls back to a setup message if omitted |
 | `STRIPE_SECRET_KEY` | No* | Required for real Premium subscriptions |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | No* | Required for real Premium subscriptions |
@@ -164,9 +172,11 @@ In **Vercel Project Settings → Environment Variables**, add the following (cop
 
 \* Stripe keys are optional — Premium activates instantly in dev mode without them.
 
-### 4. Set up the database
+### 4. Set up the Neon database
 
-Run `supabase/schema.sql` in your Supabase project's SQL Editor to create tables, enable Row Level Security, and add indexes.
+Create a Neon PostgreSQL project and run `npm run db:migrate` locally with its
+`DATABASE_URL` configured in `.env.local`. Confirm the migration succeeds
+before deploying. Do not run schema migrations as part of the Vercel build.
 
 ### 5. Deploy
 

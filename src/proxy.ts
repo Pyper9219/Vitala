@@ -22,7 +22,7 @@ const PROTECTED_PREFIXES = [
   '/subscription',
 ];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isStatic =
@@ -40,7 +40,7 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('vitala_session')?.value;
   const payload = token ? verifyToken(token) : null;
 
-  if (isProtected && !payload) {
+  if (isProtected && !isPublic && !payload) {
     const url = new URL('/login', request.url);
     url.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(url);
