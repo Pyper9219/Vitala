@@ -6,7 +6,6 @@ import { ArrowRight, Check, Mail, Shield, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
-import { Logo } from "@/components/logo";
 import { LogoMark } from "@/components/logo";
 
 const features = [
@@ -71,12 +70,12 @@ export default function Home() {
                 reminders—all organized around your lifestyle, budget, and equipment.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/signup" className="button w-full sm:w-auto">
-                  Get started free
-                </Link>
-                <Link href="#how-it-works" className="button variant-outline w-full sm:w-auto">
-                  How it works
-                </Link>
+                <Button asChild className="w-full sm:w-auto">
+                  <Link href="/signup">Get started free</Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full sm:w-auto">
+                  <Link href="#how-it-works">How it works</Link>
+                </Button>
               </div>
               <div className="mt-10 flex items-center justify-center gap-6 text-sm text-muted-foreground">
                 <Check className="h-4 w-4 text-primary" /> No credit card required
@@ -140,49 +139,50 @@ export default function Home() {
               <p className="text-lg mb-8 opacity-90">
                 Join thousands building healthier habits with personalized plans and reminders.
               </p>
-              <Link href="/signup" className="button w-full sm:w-auto">
-                Start for free <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+              <Button asChild variant="secondary" className="w-full sm:w-auto">
+                <Link href="/signup">
+                  Start for free <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </div>
           </div>
+        </section>
+
+        <section className="px-4 pb-12">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-2 w-full max-w-sm mx-auto">
+            <div className="rounded-xl border bg-card p-6 shadow-xl">
+              <div className="flex items-center gap-2 mb-4">
+                <LogoMark className="h-5 w-5 text-primary" />
+                <span className="font-bold">Vitala</span>
+              </div>
+              <h3 className="font-semibold mb-2">Get wellness tips weekly</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Subscribe for meal ideas, workout tips, and reminders.
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="email"
+                    required
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  <Button type="submit" disabled={submitting} size="sm" className="w-auto">
+                    {submitting ? "Saving…" : "Subscribe"}
+                  </Button>
+                </div>
+                {submitted && (
+                  <p className="text-xs text-primary font-medium">Thanks for subscribing!</p>
+                )}
+              </div>
+            </div>
+          </form>
         </section>
       </main>
 
       <Footer />
-
-      {/* Newsletter capture modal (inline, simple) */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-2 w-80">
-          <div className="rounded-xl border bg-card p-6 shadow-xl">
-            <div className="flex items-center gap-2 mb-4">
-              <LogoMark className="h-5 w-5 text-primary" />
-              <span className="font-bold">Vitala</span>
-            </div>
-            <h3 className="font-semibold mb-2">Get wellness tips weekly</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Subscribe for meal ideas, workout tips, and reminders.
-            </p>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <input
-                  type="email"
-                  required
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                />
-                <Button type="submit" disabled={submitting} size="sm" className="w-auto">
-                  {submitting ? "Saving…" : "Subscribe"}
-                </Button>
-              </div>
-              {submitted && (
-                <p className="text-xs text-primary font-medium">Thanks for subscribing!</p>
-              )}
-            </div>
-          </div>
-        </form>
-      </div>
     </div>
   );
 }
