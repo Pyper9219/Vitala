@@ -1,17 +1,19 @@
-import { parse, serialize } from 'cookie';
+import { parseCookie, stringifySetCookie } from 'cookie';
 
 const SESSION_COOKIE = 'vitala_session';
 
 /** Read the session token from a Request (middleware-safe). */
 export function getSessionTokenFromRequest(request: Request): string | null {
   const cookieHeader = request.headers.get('cookie') ?? '';
-  const cookies = parse(cookieHeader);
+  const cookies = parseCookie(cookieHeader);
   return cookies[SESSION_COOKIE] ?? null;
 }
 
 /** Serialize a session cookie value for a Response. */
 export function serializeSessionCookie(token: string): string {
-  return serialize(SESSION_COOKIE, token, {
+  return stringifySetCookie({
+    name: SESSION_COOKIE,
+    value: token,
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -22,7 +24,9 @@ export function serializeSessionCookie(token: string): string {
 
 /** Serialize an empty session cookie to clear it. */
 export function clearSessionCookie(): string {
-  return serialize(SESSION_COOKIE, '', {
+  return stringifySetCookie({
+    name: SESSION_COOKIE,
+    value: '',
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
