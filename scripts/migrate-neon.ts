@@ -1,7 +1,10 @@
-import { Pool } from 'pg';
+import { Pool } from "pg";
 const DATABASE_URL = process.env.DATABASE_URL;
-if (!DATABASE_URL) throw new Error('DATABASE_URL is not set');
-const pool = new Pool({ connectionString: DATABASE_URL, ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false });
+if (!DATABASE_URL) throw new Error("DATABASE_URL is not set");
+const pool = new Pool({
+  connectionString: DATABASE_URL,
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+});
 const migrations = [
   `CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), email TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, name TEXT, role TEXT NOT NULL DEFAULT 'user', subscription_tier TEXT NOT NULL DEFAULT 'free', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());`,
   `CREATE TABLE IF NOT EXISTS meal_plans (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, plan_type TEXT NOT NULL DEFAULT 'week' CHECK (plan_type IN ('day','week','month')), start_date DATE, title TEXT, data JSONB NOT NULL DEFAULT '{}', is_favorite BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());`,
@@ -21,7 +24,15 @@ const migrations = [
 ];
 async function main() {
   const client = await pool.connect();
-  try { for (const m of migrations) await client.query(m); console.log("✅ Neon migration completed successfully"); }
-  finally { client.release(); await pool.end(); }
+  try {
+    for (const m of migrations) await client.query(m);
+    console.log("✅ Neon migration completed successfully");
+  } finally {
+    client.release();
+    await pool.end();
+  }
 }
-main().catch((e) => { console.error("❌ Migration failed:", e); process.exit(1); });
+main().catch((e) => {
+  console.error("❌ Migration failed:", e);
+  process.exit(1);
+});

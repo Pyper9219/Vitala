@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
-import { createUser, generateTokens } from '@/lib/auth';
-import { serializeSessionCookie } from '@/lib/session';
+import { NextResponse } from "next/server";
+import { createUser, generateTokens } from "@/lib/auth";
+import { serializeSessionCookie } from "@/lib/session";
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request): Promise<Response> {
   try {
@@ -15,10 +15,7 @@ export async function POST(request: Request): Promise<Response> {
     };
 
     if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
 
     const user = await createUser(email, password, name);
@@ -31,17 +28,14 @@ export async function POST(request: Request): Promise<Response> {
       },
       { status: 201 },
     );
-    response.headers.append('Set-Cookie', serializeSessionCookie(accessToken));
+    response.headers.append("Set-Cookie", serializeSessionCookie(accessToken));
     return response;
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === 'User with this email already exists') {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 409 },
-      );
+    if (error instanceof Error && error.message === "User with this email already exists") {
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
-    const message = error instanceof Error ? error.message : 'Failed to create account';
-    console.error('Signup error:', error);
+    const message = error instanceof Error ? error.message : "Failed to create account";
+    console.error("Signup error:", error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -74,9 +74,7 @@ async function sendTwilioMessage({
 }) {
   const twilioClient = getClient();
   if (!twilioClient) {
-    console.log(
-      `[Dev Mode] Twilio not configured. Would send ${channel} to ${to}:\n${body}`
-    );
+    console.log(`[Dev Mode] Twilio not configured. Would send ${channel} to ${to}:\n${body}`);
     return { success: true, devMode: true, channel, to };
   }
 
@@ -115,9 +113,7 @@ export async function sendReminder({
   channels?: NotificationChannel[];
 }) {
   const results = await Promise.all(
-    channels.map((ch) =>
-      sendNotification({ userId, title, body, channel: ch, phoneNumber })
-    )
+    channels.map((ch) => sendNotification({ userId, title, body, channel: ch, phoneNumber })),
   );
   return results;
 }

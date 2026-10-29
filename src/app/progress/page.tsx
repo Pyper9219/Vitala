@@ -5,20 +5,8 @@ import { redirect } from "next/navigation";
 import { query } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Flame,
-  CheckCircle2,
-  Activity,
-  Moon,
-  TrendingUp,
-  Plus,
-} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Flame, CheckCircle2, Activity, Moon, TrendingUp, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface ProgressEntry {
@@ -51,7 +39,7 @@ async function getProgressEntries(userId: string): Promise<ProgressEntry[]> {
      WHERE user_id = $1
      ORDER BY entry_date DESC
      LIMIT 30`,
-    [userId]
+    [userId],
   );
   return res.rows as ProgressEntry[];
 }
@@ -86,7 +74,7 @@ export async function addEntry(formData: FormData) {
        (user_id, entry_date, meals_completed, workouts_completed,
         energy_level, mood, sleep_hours, notes)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    [userId, entryDate, mealsCompleted, workoutsCompleted, energyLevel, mood, sleepHours, notes]
+    [userId, entryDate, mealsCompleted, workoutsCompleted, energyLevel, mood, sleepHours, notes],
   );
 }
 
@@ -102,19 +90,12 @@ export default async function ProgressPage() {
   const avgEnergy =
     entries.length > 0
       ? Math.round(
-          (entries.reduce((acc, e) => acc + (Number(e.energy_level) || 0), 0) /
-            entries.length) *
-            10
+          (entries.reduce((acc, e) => acc + (Number(e.energy_level) || 0), 0) / entries.length) *
+            10,
         ) / 10
       : 0;
-  const totalMeals = entries.reduce(
-    (acc, e) => acc + (Number(e.meals_completed) || 0),
-    0
-  );
-  const totalWorkouts = entries.reduce(
-    (acc, e) => acc + (Number(e.workouts_completed) || 0),
-    0
-  );
+  const totalMeals = entries.reduce((acc, e) => acc + (Number(e.meals_completed) || 0), 0);
+  const totalWorkouts = entries.reduce((acc, e) => acc + (Number(e.workouts_completed) || 0), 0);
 
   const MOODS = ["😊 Great", "😐 Okay", "😔 Low", "😴 Tired", "🔥 Energized"];
 
@@ -154,9 +135,7 @@ export default async function ProgressPage() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="text-2xl font-bold">{avgEnergy}/5</div>
-              <div className="text-xs text-muted-foreground">
-                Across {entries.length} entries
-              </div>
+              <div className="text-xs text-muted-foreground">Across {entries.length} entries</div>
             </CardContent>
           </Card>
           <Card>
@@ -251,9 +230,7 @@ export default async function ProgressPage() {
                           type="button"
                           name="mood"
                           value={mood}
-                          className={`px-3 py-2 rounded-md text-sm border transition-colors ${
-                            "bg-background border-input hover:bg-muted"
-                          }`}
+                          className={`px-3 py-2 rounded-md text-sm border transition-colors ${"bg-background border-input hover:bg-muted"}`}
                         >
                           {mood}
                         </button>
@@ -295,18 +272,17 @@ export default async function ProgressPage() {
                       <div key={entry.id} className="p-3 rounded-lg border bg-background">
                         <div className="flex items-center justify-between mb-1">
                           <div className="text-sm font-medium">
-                            {new Date(entry.entry_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                            {new Date(entry.entry_date).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                            })}
                           </div>
-                          <Badge variant="outline">
-                            {entry.energy_level}/5
-                          </Badge>
+                          <Badge variant="outline">{entry.energy_level}/5</Badge>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {entry.meals_completed} meals • {entry.workouts_completed} workouts
                         </div>
-                        {entry.mood && (
-                          <div className="text-xs mt-1">{entry.mood}</div>
-                        )}
+                        {entry.mood && <div className="text-xs mt-1">{entry.mood}</div>}
                       </div>
                     ))}
                   </div>

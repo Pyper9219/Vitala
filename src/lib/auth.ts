@@ -1,18 +1,16 @@
-import { JwtPayload, sign, verify } from 'jsonwebtoken';
-import { compare, hash } from 'bcryptjs';
-import { query } from './db';
+import { JwtPayload, sign, verify } from "jsonwebtoken";
+import { compare, hash } from "bcryptjs";
+import { query } from "./db";
 
 function getJWTSecret(): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
-    throw new Error(
-      'JWT_SECRET environment variable is not set. Please add it to .env.local',
-    );
+    throw new Error("JWT_SECRET environment variable is not set. Please add it to .env.local");
   }
   return secret;
 }
 
-const JWT_EXPIRES_IN = '7d';
+const JWT_EXPIRES_IN = "7d";
 
 export interface User {
   id: string;
@@ -52,14 +50,14 @@ export function generateTokens(user: User): AuthTokens {
     sub: user.id,
     email: user.email,
     name: user.name,
-    role: user.role || 'user',
+    role: user.role || "user",
   };
 
   const accessToken = sign(payload, secret, {
     expiresIn: JWT_EXPIRES_IN,
   });
 
-  const refreshToken = sign(payload, secret, { expiresIn: '30d' });
+  const refreshToken = sign(payload, secret, { expiresIn: "30d" });
 
   return { accessToken, refreshToken };
 }
@@ -77,7 +75,7 @@ export function verifyToken(token: string): SessionUser | null {
       id: decoded.sub,
       email: decoded.email,
       name: decoded.name ?? null,
-      role: decoded.role ?? 'user',
+      role: decoded.role ?? "user",
     };
   } catch {
     return null;
@@ -91,23 +89,25 @@ export async function getSessionUser(token: string): Promise<User | null> {
 }
 
 export async function getUserById(id: string): Promise<User | null> {
-  const result = await query<User>('SELECT id, email, name, role, subscription_tier, created_at FROM users WHERE id = $1', [id]);
+  const result = await query<User>(
+    "SELECT id, email, name, role, subscription_tier, created_at FROM users WHERE id = $1",
+    [id],
+  );
   return result.rows[0] ?? null;
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const result = await query<User>('SELECT id, email, name, role, subscription_tier, created_at FROM users WHERE email = $1', [email]);
+  const result = await query<User>(
+    "SELECT id, email, name, role, subscription_tier, created_at FROM users WHERE email = $1",
+    [email],
+  );
   return result.rows[0] ?? null;
 }
 
-export async function createUser(
-  email: string,
-  password: string,
-  name?: string,
-): Promise<User> {
+export async function createUser(email: string, password: string, name?: string): Promise<User> {
   const existing = await getUserByEmail(email);
   if (existing) {
-    throw new Error('User with this email already exists');
+    throw new Error("User with this email already exists");
   }
 
   const hashedPassword = await hashPassword(password);
@@ -118,12 +118,9 @@ export async function createUser(
   return rows[0];
 }
 
-export async function authenticateUser(
-  email: string,
-  password: string,
-): Promise<User | null> {
+export async function authenticateUser(email: string, password: string): Promise<User | null> {
   const result = await query<User & { password_hash: string }>(
-    'SELECT id, email, name, role, subscription_tier, created_at, password_hash FROM users WHERE email = $1',
+    "SELECT id, email, name, role, subscription_tier, created_at, password_hash FROM users WHERE email = $1",
     [email],
   );
   const user = result.rows[0];
@@ -142,7 +139,7 @@ export async function authenticateUser(
 
 export async function updateSubscriptionTier(
   userId: string,
-  tier: 'free' | 'premium',
+  tier: "free" | "premium",
 ): Promise<void> {
-  await query('UPDATE users SET subscription_tier = $1 WHERE id = $2', [tier, userId]);
+  await query("UPDATE users SET subscription_tier = $1 WHERE id = $2", [tier, userId]);
 }

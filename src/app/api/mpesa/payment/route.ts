@@ -22,14 +22,10 @@ interface MpesaRequest {
 
 export async function POST(req: Request) {
   try {
-    const { phoneNumber, amount, userId, planId }: MpesaRequest =
-      await req.json();
+    const { phoneNumber, amount, userId, planId }: MpesaRequest = await req.json();
 
     if (!phoneNumber || !amount || !userId || !planId) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     // Format phone number (Kenya: 254XXXXXXXXX)
@@ -49,17 +45,13 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       devMode: true,
-      message:
-        "M-Pesa STK Push simulated. In production, integrate with Daraja API.",
+      message: "M-Pesa STK Push simulated. In production, integrate with Daraja API.",
       checkoutRequestId: `dev_mpesa_${Date.now()}`,
       phone: normalizedPhone,
       amount,
     });
   } catch (err) {
     console.error("M-Pesa payment error:", err);
-    return NextResponse.json(
-      { error: "Payment processing failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Payment processing failed" }, { status: 500 });
   }
 }

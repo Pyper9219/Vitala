@@ -10,10 +10,7 @@ export async function POST(req: Request) {
     const { planId, userId } = await req.json();
 
     if (!planId || !userId) {
-      return NextResponse.json(
-        { error: "planId and userId are required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "planId and userId are required" }, { status: 400 });
     }
 
     const plan = getPlan(planId as any);
@@ -31,7 +28,7 @@ export async function POST(req: Request) {
            status = EXCLUDED.status,
            current_period_end = EXCLUDED.current_period_end,
            updated_at = EXCLUDED.updated_at`,
-        [userId, "free", "active", null, new Date().toISOString()]
+        [userId, "free", "active", null, new Date().toISOString()],
       );
       return NextResponse.json({ success: true, plan: "free" });
     }
@@ -57,7 +54,7 @@ export async function POST(req: Request) {
           `dev_sub_${userId}`,
           new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           new Date().toISOString(),
-        ]
+        ],
       );
       return NextResponse.json({
         success: true,
@@ -68,17 +65,15 @@ export async function POST(req: Request) {
     }
 
     // Get or create Stripe customer
-    const profileRes = await query(
-      `SELECT email, display_name FROM profiles WHERE id = $1`,
-      [userId]
-    );
+    const profileRes = await query(`SELECT email, display_name FROM profiles WHERE id = $1`, [
+      userId,
+    ]);
     const profile = profileRes.rows[0] || {};
 
     let customerId: string | undefined = undefined;
-    const subRes = await query(
-      `SELECT stripe_customer_id FROM subscriptions WHERE user_id = $1`,
-      [userId]
-    );
+    const subRes = await query(`SELECT stripe_customer_id FROM subscriptions WHERE user_id = $1`, [
+      userId,
+    ]);
 
     if (subRes.rows[0]?.stripe_customer_id) {
       customerId = subRes.rows[0].stripe_customer_id;
@@ -109,9 +104,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error("Stripe checkout error:", err);
-    return NextResponse.json(
-      { error: "Failed to create checkout session" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to create checkout session" }, { status: 500 });
   }
 }

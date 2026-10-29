@@ -5,12 +5,7 @@ import { redirect } from "next/navigation";
 import { query } from "@/lib/db";
 import { verifyToken, getUserById } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { User, LogOut, Settings } from "lucide-react";
@@ -32,10 +27,7 @@ export async function updateProfile(formData: FormData): Promise<void> {
 
   const name = (formData.get("name") as string) || "";
 
-  await query(
-    `UPDATE users SET name = $1, updated_at = NOW() WHERE id = $2`,
-    [name, user.id]
-  );
+  await query(`UPDATE users SET name = $1, updated_at = NOW() WHERE id = $2`, [name, user.id]);
 }
 
 export default async function AccountPage() {
@@ -62,32 +54,19 @@ export default async function AccountPage() {
                 <User className="h-8 w-8 text-muted-foreground" />
               </div>
               <div>
-                <h2 className="font-semibold">
-                  {user.name || user.email || "No display name"}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {user.email || "No email"}
-                </p>
+                <h2 className="font-semibold">{user.name || user.email || "No display name"}</h2>
+                <p className="text-sm text-muted-foreground">{user.email || "No email"}</p>
               </div>
             </div>
 
             <form action={updateProfile} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Display name</Label>
-                <Input
-                  id="name"
-                  defaultValue={user.name || ""}
-                  name="name"
-                />
+                <Input id="name" defaultValue={user.name || ""} name="name" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  defaultValue={user.email || ""}
-                  readOnly
-                />
+                <Input id="email" type="email" defaultValue={user.email || ""} readOnly />
               </div>
               <Button type="submit" className="w-full">
                 Save changes

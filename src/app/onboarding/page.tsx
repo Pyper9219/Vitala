@@ -46,16 +46,28 @@ async function saveProfile(formData: FormData) {
       .filter(Boolean);
   }
   if (typeof payload.allergies === "string") {
-    payload.allergies = payload.allergies.split(",").map((s) => s.trim()).filter(Boolean);
+    payload.allergies = payload.allergies
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
   if (typeof payload.preferred_activities === "string") {
-    payload.preferred_activities = payload.preferred_activities.split(",").map((s) => s.trim()).filter(Boolean);
+    payload.preferred_activities = payload.preferred_activities
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
   if (typeof payload.equipment === "string") {
-    payload.equipment = payload.equipment.split(",").map((s) => s.trim()).filter(Boolean);
+    payload.equipment = payload.equipment
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
   if (typeof payload.reminder_channels === "string") {
-    payload.reminder_channels = payload.reminder_channels.split(",").map((s) => s.trim()).filter(Boolean);
+    payload.reminder_channels = payload.reminder_channels
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
   if (payload.age) payload.age = Number(payload.age);
   if (payload.budget_max) payload.budget_max = Number(payload.budget_max);
@@ -96,7 +108,10 @@ export default async function Onboarding() {
             <span>100% complete</span>
           </div>
           <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-            <div className="h-full bg-primary transition-all duration-300" style={{ width: "100%" }} />
+            <div
+              className="h-full bg-primary transition-all duration-300"
+              style={{ width: "100%" }}
+            />
           </div>
         </div>
 
@@ -104,7 +119,8 @@ export default async function Onboarding() {
           <CardHeader>
             <CardTitle>Profile complete!</CardTitle>
             <CardDescription className="text-sm">
-              Your wellness profile has been saved. You're all set to start building healthier habits.
+              Your wellness profile has been saved. You're all set to start building healthier
+              habits.
             </CardDescription>
           </CardHeader>
           <CardContent className="py-4">

@@ -6,10 +6,7 @@ export async function POST(req: Request) {
     const { title, body, channel, phoneNumber, userId } = await req.json();
 
     if (!title || !body) {
-      return NextResponse.json(
-        { error: "title and body are required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "title and body are required" }, { status: 400 });
     }
 
     const result = await sendNotification({
@@ -23,9 +20,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, result });
   } catch (err) {
     console.error("Notification API error:", err);
-    return NextResponse.json(
-      { error: "Failed to send notification" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to send notification" }, { status: 500 });
   }
 }

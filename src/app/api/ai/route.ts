@@ -15,7 +15,7 @@ export async function POST(req: Request) {
           reply:
             "AI features require an OpenAI API key. Please set OPENAI_API_KEY in your environment variables to enable the wellness assistant.",
         },
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -38,8 +38,10 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("AI API error:", err);
     return NextResponse.json(
-      { reply: "Sorry, I'm having trouble generating a response right now. Please try again later." },
-      { status: 500 }
+      {
+        reply: "Sorry, I'm having trouble generating a response right now. Please try again later.",
+      },
+      { status: 500 },
     );
   }
 }

@@ -2,22 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import {
-  Bell,
-  Phone,
-  MessageCircle,
-  Mail,
-  Clock,
-  ShieldCheck,
-} from "lucide-react";
+import { Bell, Phone, MessageCircle, Mail, Clock, ShieldCheck } from "lucide-react";
 
 type Channel = "in_app" | "email" | "sms" | "whatsapp";
 
@@ -71,9 +58,7 @@ export default function NotificationsPage() {
   const [saved, setSaved] = useState(false);
 
   const toggleChannel = (id: Channel) => {
-    setChannels((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
-    );
+    setChannels((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
   };
 
   const handleSave = async (e?: React.MouseEvent | React.FormEvent<HTMLFormElement>) => {
@@ -118,9 +103,7 @@ export default function NotificationsPage() {
           <CardHeader className="flex flex-row items-center justify-between py-4">
             <div>
               <CardTitle className="text-lg">Notifications</CardTitle>
-              <CardDescription>
-                Enable or disable all Vitala reminders and alerts.
-              </CardDescription>
+              <CardDescription>Enable or disable all Vitala reminders and alerts.</CardDescription>
             </div>
             <Switch
               checked={enabled}
@@ -134,9 +117,7 @@ export default function NotificationsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Delivery channels</CardTitle>
-            <CardDescription>
-              Choose how you'd like to receive reminders.
-            </CardDescription>
+            <CardDescription>Choose how you'd like to receive reminders.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -148,12 +129,12 @@ export default function NotificationsPage() {
                     key={ch.id}
                     className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
                   >
-                    <ch.icon className={`h-5 w-5 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                    <ch.icon
+                      className={`h-5 w-5 ${active ? "text-primary" : "text-muted-foreground"}`}
+                    />
                     <div className="flex-1">
                       <div className="font-medium text-sm">{ch.label}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {ch.description}
-                      </div>
+                      <div className="text-xs text-muted-foreground">{ch.description}</div>
                     </div>
                     <Switch
                       checked={active}
@@ -161,9 +142,7 @@ export default function NotificationsPage() {
                       disabled={disabled || !enabled}
                     />
                     {disabled && (
-                      <span className="text-xs text-muted-foreground">
-                        Phone number required
-                      </span>
+                      <span className="text-xs text-muted-foreground">Phone number required</span>
                     )}
                   </div>
                 );
@@ -173,15 +152,11 @@ export default function NotificationsPage() {
         </Card>
 
         {/* Phone number */}
-        {(
-          channels.includes("sms") || channels.includes("whatsapp")
-        ) && (
+        {(channels.includes("sms") || channels.includes("whatsapp")) && (
           <Card>
             <CardHeader>
               <CardTitle>Phone number</CardTitle>
-              <CardDescription>
-                Required for SMS and WhatsApp reminders.
-              </CardDescription>
+              <CardDescription>Required for SMS and WhatsApp reminders.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4">
@@ -202,9 +177,7 @@ export default function NotificationsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Quiet hours</CardTitle>
-            <CardDescription>
-              No notifications will be sent during this window.
-            </CardDescription>
+            <CardDescription>No notifications will be sent during this window.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
@@ -232,9 +205,7 @@ export default function NotificationsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Reminder frequency</CardTitle>
-            <CardDescription>
-              How often you'd like to receive check-in reminders.
-            </CardDescription>
+            <CardDescription>How often you'd like to receive check-in reminders.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -266,18 +237,11 @@ export default function NotificationsPage() {
         </Card>
 
         {/* Save */}
-        <Button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full"
-        >
+        <Button type="button" onClick={handleSave} disabled={saving} className="w-full">
           {saving ? "Saving..." : "Save preferences"}
         </Button>
         {saved && (
-          <p className="text-sm text-green-600 text-center">
-            Preferences saved successfully.
-          </p>
+          <p className="text-sm text-green-600 text-center">Preferences saved successfully.</p>
         )}
       </div>
     </div>

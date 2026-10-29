@@ -1,4 +1,4 @@
-import { neon, neonConfig } from '@neondatabase/serverless';
+import { neon, neonConfig } from "@neondatabase/serverless";
 
 // Use Neon directly (Edge-compatible); no pg Pool needed in client bundles.
 // Neon's default fetchEndpoint derivation (ep-xxx.region.aws.neon.tech ->
@@ -15,12 +15,12 @@ function getSql() {
     const DATABASE_URL = process.env.DATABASE_URL;
     if (!DATABASE_URL) {
       throw new Error(
-        'DATABASE_URL is not defined. Set it to your Neon connection string ' +
-        '(postgresql://user:password@host/db?sslmode=require) in .env.local or your deployment env.'
+        "DATABASE_URL is not defined. Set it to your Neon connection string " +
+          "(postgresql://user:password@host/db?sslmode=require) in .env.local or your deployment env.",
       );
     }
-    const dbHost = new URL(DATABASE_URL.replace('postgresql://', 'https://')).hostname;
-    const regionSuffix = dbHost.replace(/^[^.]+\./, '');
+    const dbHost = new URL(DATABASE_URL.replace("postgresql://", "https://")).hostname;
+    const regionSuffix = dbHost.replace(/^[^.]+\./, "");
     neonConfig.fetchEndpoint = `https://api.${regionSuffix}/sql`;
     sql = neon(DATABASE_URL);
   }
@@ -37,12 +37,17 @@ const QUERY_TIMEOUT_MS = 8_000;
 // sql.query(text, params) instead of calling sql(...) as a function.
 // Uses AbortController so a timeout actually cancels the underlying Neon
 // fetch instead of leaving it running in the background.
-export async function query<T = any>(text: string, params: unknown[] = []): Promise<{ rows: T[]; rowCount: number }> {
+export async function query<T = any>(
+  text: string,
+  params: unknown[] = [],
+): Promise<{ rows: T[]; rowCount: number }> {
   const controller = new AbortController();
   // Route the abort signal through fetchOptions so the underlying Neon fetch
   // is actually cancelled on timeout (HTTPQueryOptions has no top-level
   // 'signal' property in @neondatabase/serverless v1.x).
-  const promise = getSql().query(text, params, { fetchOptions: { signal: controller.signal } }) as Promise<unknown[]>;
+  const promise = getSql().query(text, params, {
+    fetchOptions: { signal: controller.signal },
+  }) as Promise<unknown[]>;
   let timer: NodeJS.Timeout | null = null;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(() => {

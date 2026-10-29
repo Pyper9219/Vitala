@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     event = getStripe().webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_WEBHOOK_SECRET!,
     );
   } catch (err) {
     console.error("Webhook signature verification failed:", err);
@@ -37,9 +37,7 @@ export async function POST(req: Request) {
         const subscriptionId = session.subscription as string;
 
         if (userId) {
-          const subscription = await getStripe().subscriptions.retrieve(
-            subscriptionId
-          );
+          const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
           await query(
             `INSERT INTO subscriptions (user_id, plan, status, stripe_customer_id, stripe_subscription_id, current_period_end, updated_at)
              VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -58,7 +56,7 @@ export async function POST(req: Request) {
               subscriptionId,
               new Date((subscription as any).current_period_end * 1000).toISOString(),
               new Date().toISOString(),
-            ]
+            ],
           );
         }
         break;
@@ -78,7 +76,7 @@ export async function POST(req: Request) {
             subscription.status,
             new Date((subscription as any).current_period_end * 1000).toISOString(),
             new Date().toISOString(),
-          ]
+          ],
         );
         break;
       }
@@ -87,7 +85,7 @@ export async function POST(req: Request) {
         const subscription = event.data.object as Stripe.Subscription;
         await query(
           `UPDATE subscriptions SET status = $1, updated_at = $2 WHERE stripe_subscription_id = $3`,
-          ["canceled", new Date().toISOString(), subscription.id]
+          ["canceled", new Date().toISOString(), subscription.id],
         );
         break;
       }

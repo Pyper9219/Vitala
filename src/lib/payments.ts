@@ -18,7 +18,7 @@ export interface PaymentResult {
 export async function activatePremium(
   userId: string,
   provider: "stripe" | "mpesa",
-  referenceId: string
+  referenceId: string,
 ): Promise<PaymentResult> {
   const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -38,7 +38,7 @@ export async function activatePremium(
       referenceId,
       periodEnd,
       new Date().toISOString(),
-    ]
+    ],
   );
 
   return {
@@ -52,7 +52,7 @@ export async function activatePremium(
 export async function getUserPlan(userId: string) {
   const res = await query(
     "SELECT plan, status, current_period_end FROM subscriptions WHERE user_id = $1",
-    [userId]
+    [userId],
   );
 
   return res.rows[0];

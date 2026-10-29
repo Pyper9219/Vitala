@@ -14,7 +14,7 @@ function Alert({ variant = "default", className, ...props }: AlertProps) {
         variant === "destructive"
           ? "border-destructive/50 bg-destructive text-destructive-foreground"
           : "border-primary/50 bg-primary text-primary-foreground",
-        className
+        className,
       )}
       {...props}
     />
@@ -36,9 +36,7 @@ interface AlertDescriptionProps extends React.HTMLAttributes<HTMLParagraphElemen
   className?: string;
 }
 function AlertDescription({ className, ...props }: AlertDescriptionProps) {
-  return (
-    <p className={cn("text-sm text-muted-foreground", className)} {...props} />
-  );
+  return <p className={cn("text-sm text-muted-foreground", className)} {...props} />;
 }
 AlertDescription.displayName = "AlertDescription";
 

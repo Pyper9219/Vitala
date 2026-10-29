@@ -57,7 +57,7 @@ export default async function SubscriptionPage() {
 
   const res = await query(
     "SELECT * FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1",
-    [userId]
+    [userId],
   );
   const subscription = res.rows[0] ?? null;
 
@@ -111,19 +111,11 @@ export default async function SubscriptionPage() {
               <h2 className="text-xl font-semibold">{currentPlan.name}</h2>
               <p className="text-muted-foreground">{currentPlan.description}</p>
               <p className="text-lg font-medium mt-2">{currentPlan.price}</p>
-              <Badge
-                variant={isActive ? "default" : "secondary"}
-                className="mt-3 inline-block"
-              >
+              <Badge variant={isActive ? "default" : "secondary"} className="mt-3 inline-block">
                 {isActive ? "Active" : subscription?.status || "Inactive"}
               </Badge>
               {isPremium && subscription?.stripe_customer_id && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-4"
-                  onClick={openPortal}
-                >
+                <Button variant="outline" size="sm" className="mt-4" onClick={openPortal}>
                   <CreditCard className="mr-2 h-4 w-4" /> Manage billing
                 </Button>
               )}
@@ -158,9 +150,7 @@ export default async function SubscriptionPage() {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-xl font-semibold">{plan.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {plan.description}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{plan.description}</p>
                   </div>
                   <span className="text-2xl font-bold">{plan.price}</span>
                 </div>
@@ -177,10 +167,7 @@ export default async function SubscriptionPage() {
                     You are on this plan
                   </div>
                 ) : (
-                  <Button
-                    className="w-full"
-                    onClick={() => handleUpgrade(plan.id)}
-                  >
+                  <Button className="w-full" onClick={() => handleUpgrade(plan.id)}>
                     {plan.cta}
                   </Button>
                 )}
@@ -201,9 +188,9 @@ export default async function SubscriptionPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm">
-              If you're in Kenya and prefer to pay via M-Pesa, contact support
-              or use the M-Pesa PayBill option at checkout. Your Premium
-              access will be activated once payment is confirmed.
+              If you're in Kenya and prefer to pay via M-Pesa, contact support or use the M-Pesa
+              PayBill option at checkout. Your Premium access will be activated once payment is
+              confirmed.
             </p>
             <Button variant="outline" size="sm" className="mt-3">
               <RefreshCw className="mr-2 h-4 w-4" /> Check payment status

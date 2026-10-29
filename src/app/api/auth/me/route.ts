@@ -1,13 +1,13 @@
-import { NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
-import { getSessionTokenFromRequest } from '@/lib/session';
-import { query } from '@/lib/db';
+import { NextResponse } from "next/server";
+import { verifyToken } from "@/lib/auth";
+import { getSessionTokenFromRequest } from "@/lib/session";
+import { query } from "@/lib/db";
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function getTokenFromHeaders(headers: Headers): string | null {
-  const cookie = headers.get('cookie');
+  const cookie = headers.get("cookie");
   if (!cookie) return null;
   const match = cookie.match(/vitala_session=([^;]+)/);
   return match ? match[1] : null;
@@ -25,7 +25,7 @@ export async function GET(req: Request): Promise<Response> {
   }
 
   const res = await query(
-    'SELECT id, email, name, role, subscription_tier, created_at FROM users WHERE id = $1',
+    "SELECT id, email, name, role, subscription_tier, created_at FROM users WHERE id = $1",
     [sessionUser.id],
   );
 
@@ -50,10 +50,7 @@ export async function PUT(req: Request): Promise<Response> {
   // Use the first non-empty name field
   const name = (full_name || display_name || "").trim() || null;
 
-  await query(
-    'UPDATE users SET name = $1 WHERE id = $2',
-    [name, sessionUser.id],
-  );
+  await query("UPDATE users SET name = $1 WHERE id = $2", [name, sessionUser.id]);
 
   return NextResponse.json({ ok: true });
 }

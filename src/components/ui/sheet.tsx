@@ -17,9 +17,7 @@ const SheetContent = React.forwardRef<
   SheetContentProps
 >(({ className, children, side = "right", ...props }, ref) => (
   <SheetPrimitive.Portal>
-    <SheetPrimitive.Overlay
-      className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
-    />
+    <SheetPrimitive.Overlay className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
     <SheetPrimitive.Content
       ref={ref}
       className={cn(
@@ -27,7 +25,7 @@ const SheetContent = React.forwardRef<
         side === "right"
           ? "right-0 top-0 bottom-0 h-full data-[state=open]:slide-in-from-right-0"
           : "left-0 top-0 bottom-0 h-full data-[state=open]:slide-in-from-left-0",
-        className
+        className,
       )}
       {...props}
     >
@@ -61,10 +59,4 @@ const SheetDescription = React.forwardRef<
 ));
 SheetDescription.displayName = SheetPrimitive.Description.displayName;
 
-export {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-  SheetTitle,
-  SheetDescription,
-};
+export { Sheet, SheetTrigger, SheetContent, SheetTitle, SheetDescription };

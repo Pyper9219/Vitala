@@ -45,7 +45,7 @@ async function getCurrentUserId(): Promise<string | null> {
 async function getWorkouts(userId: string) {
   const { rows } = await query(
     `SELECT id, title, category, instructions, duration_minutes, equipment_needed, scheduled_for, completed, created_at FROM workouts WHERE user_id = $1 ORDER BY created_at DESC`,
-    [userId]
+    [userId],
   );
   return rows as Workout[];
 }
@@ -66,7 +66,15 @@ async function addWorkout(formData: FormData): Promise<void> {
   await query(
     `INSERT INTO workouts (user_id, title, category, instructions, duration_minutes, equipment_needed, scheduled_for, completed)
      VALUES ($1, $2, $3, $4, $5, $6, $7, false)`,
-    [userId, title, category, instructions, durationMin ? Number(durationMin) : null, equipment ? equipment.split(",") : null, scheduled ? new Date(scheduled).toISOString() : new Date().toISOString()]
+    [
+      userId,
+      title,
+      category,
+      instructions,
+      durationMin ? Number(durationMin) : null,
+      equipment ? equipment.split(",") : null,
+      scheduled ? new Date(scheduled).toISOString() : new Date().toISOString(),
+    ],
   );
 
   redirect("/workouts");
@@ -83,7 +91,7 @@ async function toggleWorkout(formData: FormData): Promise<void> {
 
   await query(
     `UPDATE workouts SET completed = $1, completed_at = CASE WHEN $2 THEN NOW() ELSE NULL END WHERE id = $3 AND user_id = $4`,
-    [completed, completed, id, userId]
+    [completed, completed, id, userId],
   );
 
   redirect("/workouts");
@@ -117,16 +125,8 @@ export default async function WorkoutsPage() {
       {/* Quick add form */}
       <div className="mb-6">
         <form action={addWorkout} className="space-y-2">
-          <input
-            type="hidden"
-            name="category"
-            value="cardio"
-          />
-          <input
-            type="hidden"
-            name="scheduled_for"
-            defaultValue={new Date().toISOString()}
-          />
+          <input type="hidden" name="category" value="cardio" />
+          <input type="hidden" name="scheduled_for" defaultValue={new Date().toISOString()} />
           <div className="space-y-2">
             <input
               type="text"
@@ -150,14 +150,10 @@ export default async function WorkoutsPage() {
               <CardTitle>{w.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm line-clamp-3">
-                {w.instructions ?? "No instructions"}
-              </p>
+              <p className="text-sm line-clamp-3">{w.instructions ?? "No instructions"}</p>
 
               <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                {w.duration_minutes && (
-                  <div>Duration: {w.duration_minutes} min</div>
-                )}
+                {w.duration_minutes && <div>Duration: {w.duration_minutes} min</div>}
                 {w.scheduled_for && (
                   <div>Scheduled: {new Date(w.scheduled_for).toLocaleDateString()}</div>
                 )}

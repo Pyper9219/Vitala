@@ -17,14 +17,14 @@ const Separator = React.forwardRef<HTMLHRElement, SeparatorProps>(
         className={cn(
           "relative w-full shrink-0 border-y",
           orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]",
-          className
+          className,
         )}
         aria-orientation={orientation}
         aria-hidden={decorative}
         {...props}
       />
     );
-  }
+  },
 );
 Separator.displayName = "Separator";
 

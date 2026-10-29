@@ -6,20 +6,8 @@ import { verifyToken } from "@/lib/auth";
 import { query } from "@/lib/db";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Plus,
-  Clock,
-  Flame,
-  CheckCircle2,
-  ShoppingCart,
-  Trash2,
-} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Clock, Flame, CheckCircle2, ShoppingCart, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
@@ -64,10 +52,9 @@ interface Meal {
 }
 
 async function getMealPlans(userId: string): Promise<MealPlan[]> {
-  const res = await query(
-    "SELECT * FROM meal_plans WHERE user_id = $1 ORDER BY created_at DESC",
-    [userId]
-  );
+  const res = await query("SELECT * FROM meal_plans WHERE user_id = $1 ORDER BY created_at DESC", [
+    userId,
+  ]);
   return res.rows as MealPlan[];
 }
 
@@ -77,7 +64,7 @@ async function getMeals(planId: string): Promise<Meal[]> {
      JOIN meal_plans mp ON m.meal_plan_id = mp.id
      WHERE mp.id = $1 AND mp.user_id = (SELECT user_id FROM users WHERE id = (SELECT user_id FROM meal_plans WHERE id = $1 LIMIT 1))
      ORDER BY m.created_at`,
-    [planId]
+    [planId],
   );
   return res.rows as Meal[];
 }
@@ -91,7 +78,7 @@ export async function createPlan(formData: FormData) {
   await query(
     `INSERT INTO meal_plans (user_id, plan_type, start_date, title, data, is_favorite)
      VALUES ($1, $2, $3, $4, $5, $6)`,
-    [userId, "day", today, `Meal plan - ${today}`, "{}", false]
+    [userId, "day", today, `Meal plan - ${today}`, "{}", false],
   );
 }
 
@@ -109,14 +96,14 @@ export async function addMeal(formData: FormData) {
   const estimated_cost = Number(formData.get("estimated_cost")) || 0;
   const currency = (formData.get("currency") as string) || "KES";
 
-  const ingredients = ingredientsRaw.split(",").map((i) => i.trim()).filter(Boolean);
+  const ingredients = ingredientsRaw
+    .split(",")
+    .map((i) => i.trim())
+    .filter(Boolean);
   const instructions = instructionsRaw.split("\n").filter(Boolean);
 
   // Verify plan ownership before inserting
-  const plan = await query(
-    "SELECT user_id FROM meal_plans WHERE id = $1",
-    [mealPlanId]
-  );
+  const plan = await query("SELECT user_id FROM meal_plans WHERE id = $1", [mealPlanId]);
   if (plan.rowCount === 0 || plan.rows[0].user_id !== userId) {
     return;
   }
@@ -134,7 +121,7 @@ export async function addMeal(formData: FormData) {
       prep_time_minutes,
       estimated_cost,
       currency,
-    ]
+    ],
   );
 }
 
@@ -147,7 +134,7 @@ export async function toggleMeal(formData: FormData) {
   const completed = formData.get("completed") === "true";
   await query(
     `UPDATE meals SET completed = $1, completed_at = CASE WHEN $1 THEN NOW() ELSE NULL END WHERE id = $2`,
-    [completed, id]
+    [completed, id],
   );
 }
 
@@ -181,9 +168,7 @@ export default async function MealsPage() {
         <div className="flex flex-col lg:flex-row gap-6 items-start justify-between mb-8">
           <div className="flex-1">
             <h1 className="text-3xl font-bold">Meal Planner</h1>
-            <p className="text-muted-foreground mt-2">
-              Plan your meals and track what you eat.
-            </p>
+            <p className="text-muted-foreground mt-2">Plan your meals and track what you eat.</p>
           </div>
           <div className="flex gap-3">
             <form action={createPlan}>
@@ -234,9 +219,7 @@ export default async function MealsPage() {
                         {MEAL_TYPES.map((t) => (
                           <Badge
                             key={t}
-                            variant={
-                              meals.some((m) => m.meal_type === t) ? "default" : "outline"
-                            }
+                            variant={meals.some((m) => m.meal_type === t) ? "default" : "outline"}
                             className="mr-2"
                           >
                             {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -268,24 +251,33 @@ export default async function MealsPage() {
                                   <Badge variant="outline">{meal.meal_type}</Badge>
                                 </div>
                                 <div className="text-xs text-muted-foreground mt-1">
-                                  {meal.prep_time_minutes} min prep •
-                                  {meal.estimated_cost} {meal.currency}
+                                  {meal.prep_time_minutes} min prep •{meal.estimated_cost}{" "}
+                                  {meal.currency}
                                 </div>
                                 {meal.ingredients && (
                                   <div className="text-xs text-muted-foreground mt-1 max-w-xs truncate">
                                     {Array.isArray(meal.ingredients)
                                       ? meal.ingredients.join(", ")
                                       : typeof meal.ingredients === "string"
-                                      ? JSON.parse(meal.ingredients).join(", ")
-                                      : meal.ingredients}
+                                        ? JSON.parse(meal.ingredients).join(", ")
+                                        : meal.ingredients}
                                   </div>
                                 )}
                               </div>
                               <div className="flex items-center gap-2">
                                 <form action={toggleMeal} style={{ display: "contents" }}>
                                   <input type="hidden" name="id" value={meal.id} />
-                                  <input type="hidden" name="completed" value={String(meal.completed)} />
-                                  <Button type="submit" variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <input
+                                    type="hidden"
+                                    name="completed"
+                                    value={String(meal.completed)}
+                                  />
+                                  <Button
+                                    type="submit"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                  >
                                     {meal.completed ? (
                                       <CheckCircle2 className="h-4 w-4 text-primary" />
                                     ) : (
@@ -295,7 +287,12 @@ export default async function MealsPage() {
                                 </form>
                                 <form action={deleteMeal} style={{ display: "inline" }}>
                                   <input type="hidden" name="id" value={meal.id} />
-                                  <Button type="submit" variant="ghost" size="sm" className="text-destructive">
+                                  <Button
+                                    type="submit"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-destructive"
+                                  >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </form>
@@ -328,7 +325,10 @@ export default async function MealsPage() {
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Meal type</label>
-                          <select className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" name="meal_type">
+                          <select
+                            className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            name="meal_type"
+                          >
                             {MEAL_TYPES.map((t) => (
                               <option key={t} value={t}>
                                 {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -337,7 +337,9 @@ export default async function MealsPage() {
                           </select>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Ingredients (comma separated)</label>
+                          <label className="text-sm font-medium">
+                            Ingredients (comma separated)
+                          </label>
                           <input
                             className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             name="ingredients"

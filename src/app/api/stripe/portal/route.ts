@@ -10,18 +10,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "userId required" }, { status: 400 });
     }
 
-    const res = await query(
-      "SELECT stripe_customer_id FROM subscriptions WHERE user_id = $1",
-      [userId]
-    );
+    const res = await query("SELECT stripe_customer_id FROM subscriptions WHERE user_id = $1", [
+      userId,
+    ]);
 
     const sub = res.rows[0];
 
     if (!sub?.stripe_customer_id) {
-      return NextResponse.json(
-        { error: "No Stripe customer found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "No Stripe customer found" }, { status: 404 });
     }
 
     const portalSession = await getStripe().billingPortal.sessions.create({
@@ -32,9 +28,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: portalSession.url });
   } catch (err) {
     console.error("Portal error:", err);
-    return NextResponse.json(
-      { error: "Failed to create portal session" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to create portal session" }, { status: 500 });
   }
 }

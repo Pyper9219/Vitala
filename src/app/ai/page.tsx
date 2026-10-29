@@ -2,12 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   MessageCircle,
   Sparkles,
@@ -23,7 +18,8 @@ export default function AIPage() {
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([
     {
       role: "assistant",
-      content: "Hi! I'm your Vitala wellness assistant. I can help you generate meal plans, workout routines, shopping lists, and answer wellness questions. What would you like to work on today?",
+      content:
+        "Hi! I'm your Vitala wellness assistant. I can help you generate meal plans, workout routines, shopping lists, and answer wellness questions. What would you like to work on today?",
     },
   ]);
   const [input, setInput] = useState("");
@@ -105,9 +101,7 @@ export default function AIPage() {
               {messages.map((msg, i) => (
                 <div
                   key={i}
-                  className={`flex gap-4 ${
-                    msg.role === "user" ? "flex-row-reverse" : ""
-                  }`}
+                  className={`flex gap-4 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                 >
                   <div
                     className={`w-[40px] h-[40px] rounded-full flex items-center justify-center shrink-0 ${

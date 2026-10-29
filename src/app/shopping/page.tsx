@@ -6,19 +6,8 @@ import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Plus,
-  ShoppingCart,
-  CheckCircle2,
-  Trash2,
-  Package,
-} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, ShoppingCart, CheckCircle2, Trash2, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const CATEGORIES = [
@@ -65,7 +54,7 @@ async function getShoppingItems(userId: string): Promise<ShoppingItem[]> {
      FROM shopping_items
      WHERE user_id = $1
      ORDER BY purchased ASC, created_at DESC`,
-    [userId]
+    [userId],
   );
   return res.rows;
 }
@@ -89,7 +78,7 @@ async function addShoppingItem(formData: FormData): Promise<void> {
   await query(
     `INSERT INTO shopping_items (user_id, name, category, quantity, unit, estimated_cost, purchased, created_at)
      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
-    [userId, name, category, quantity, unit, estimated_cost, false]
+    [userId, name, category, quantity, unit, estimated_cost, false],
   );
 }
 
@@ -98,10 +87,11 @@ async function toggleShoppingItem(formData: FormData): Promise<void> {
   const purchased = String(formData.get("purchased") ?? "") === "true";
   const userId = await getCurrentUserId();
   if (!userId) return;
-  await query(
-    `UPDATE shopping_items SET purchased = $1 WHERE id = $2 AND user_id = $3`,
-    [!purchased, id, userId]
-  );
+  await query(`UPDATE shopping_items SET purchased = $1 WHERE id = $2 AND user_id = $3`, [
+    !purchased,
+    id,
+    userId,
+  ]);
 }
 
 async function deleteShoppingItem(formData: FormData): Promise<void> {
@@ -121,10 +111,7 @@ export default async function ShoppingPage() {
 
   const purchasedItems = items.filter((i) => i.purchased);
   const pendingItems = items.filter((i) => !i.purchased);
-  const totalCost = items.reduce(
-    (acc, item) => acc + (Number(item.estimated_cost) || 0),
-    0
-  );
+  const totalCost = items.reduce((acc, item) => acc + (Number(item.estimated_cost) || 0), 0);
 
   return (
     <div className="min-h-screen bg-background py-12 px-4">
@@ -132,9 +119,7 @@ export default async function ShoppingPage() {
         <div className="flex flex-col lg:flex-row gap-6 items-start justify-between mb-8">
           <div className="flex-1">
             <h1 className="text-3xl font-bold">Shopping List</h1>
-            <p className="text-muted-foreground mt-2">
-              Track what you need to buy.
-            </p>
+            <p className="text-muted-foreground mt-2">Track what you need to buy.</p>
           </div>
           <Button>
             <Plus className="mr-2 h-4 w-4" /> Add item
@@ -184,12 +169,8 @@ export default async function ShoppingPage() {
               <CardHeader className="flex flex-row items-center justify-between pb-3">
                 <CardTitle>Items to buy</CardTitle>
                 <div className="flex gap-2">
-                  <Badge variant="outline">
-                    {pendingItems.length} pending
-                  </Badge>
-                  <Badge variant="outline">
-                    {purchasedItems.length} done
-                  </Badge>
+                  <Badge variant="outline">{pendingItems.length} pending</Badge>
+                  <Badge variant="outline">{purchasedItems.length} done</Badge>
                 </div>
               </CardHeader>
               <CardContent>
@@ -208,14 +189,8 @@ export default async function ShoppingPage() {
                         <div className="flex items-center gap-3">
                           <form action={toggleShoppingItem} className="inline">
                             <input type="hidden" name="id" value={item.id} />
-                            <input
-                              type="hidden"
-                              name="purchased"
-                              value={String(item.purchased)}
-                            />
-                            <button
-                              className="w-5 h-5 rounded-full border border-input flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
-                            >
+                            <input type="hidden" name="purchased" value={String(item.purchased)} />
+                            <button className="w-5 h-5 rounded-full border border-input flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors">
                               <CheckCircle2 className="h-3.5 w-3.5" />
                             </button>
                           </form>
@@ -231,7 +206,13 @@ export default async function ShoppingPage() {
                             )}
                           </div>
                         </div>
-                        <form action={deleteShoppingItem} className="inline" onSubmit={(e) => { if (!confirm("Delete this item?")) e.preventDefault(); }}>
+                        <form
+                          action={deleteShoppingItem}
+                          className="inline"
+                          onSubmit={(e) => {
+                            if (!confirm("Delete this item?")) e.preventDefault();
+                          }}
+                        >
                           <input type="hidden" name="id" value={item.id} />
                           <Button variant="ghost" size="sm" type="submit">
                             <Trash2 className="h-4 w-4" />
@@ -262,7 +243,9 @@ export default async function ShoppingPage() {
                       <div key={item.id} className="p-2 rounded-lg border bg-muted/50">
                         <div className="flex items-center gap-2">
                           <CheckCircle2 className="h-4 w-4 text-primary" />
-                          <span className="text-sm line-through text-muted-foreground">{item.name}</span>
+                          <span className="text-sm line-through text-muted-foreground">
+                            {item.name}
+                          </span>
                         </div>
                       </div>
                     ))}

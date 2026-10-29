@@ -39,14 +39,15 @@ export default function HelpPage() {
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Help Center</h1>
-          <p className="text-muted-foreground mt-2">
-            Frequently asked questions about Vitala.
-          </p>
+          <p className="text-muted-foreground mt-2">Frequently asked questions about Vitala.</p>
         </div>
 
         <div className="space-y-4">
           {FAQS.map((faq, i) => (
-            <div key={i} className="border rounded-xl p-4 hover:border-primary/50 transition-colors">
+            <div
+              key={i}
+              className="border rounded-xl p-4 hover:border-primary/50 transition-colors"
+            >
               <h3 className="font-semibold mb-2">{faq.q}</h3>
               <p className="text-sm text-muted-foreground">{faq.a}</p>
             </div>
